@@ -438,7 +438,7 @@ const ACTIVITIES = [
   { id:'pendulum', name:'البندول البسيط', icon:'🕰' },
   { id:'freefall', name:'السقوط الحر', icon:'⬇' },
   { id:'incline', name:'الحركة على مستوى مائل', icon:'📐' },
-  { id:'circuit', name:'الدارة الكهربائية البسيطة', icon:'🔋' },
+  { id:'circuit', name:'الدائرة الكهربائية البسيطة', icon:'🔋' },
   { id:'boyle', name:'قانون بويل (الضغط والحجم)', icon:'🧴' },
   { id:'displacement', name:'قياس حجم جسم بالإزاحة', icon:'🪨' },
   { id:'archimedes', name:'مبدأ أرخميدس (الطفو)', icon:'🛟' },
@@ -448,7 +448,12 @@ const ACTIVITIES = [
   { id:'wave', name:'الموجات وطول الموجة', icon:'🌊' },
   { id:'refraction', name:'انكسار الضوء (قانون سنيل)', icon:'🔷' },
   { id:'collision', name:'تصادم الأجسام وحفظ الزخم', icon:'💥' },
-  { id:'seriesparallel', name:'التوالي والتوازي في الدارات', icon:'🔌' }
+  { id:'seriesparallel', name:'التوالي والتوازي في الدارات', icon:'🔌' },
+  { id:'wavetype', name:'الموجات الطولية والمستعرضة', icon:'🎵' },
+  { id:'transformer', name:'المحولة الكهربائية', icon:'🔃' },
+  { id:'mirror', name:'المرايا الكروية وتكوين الصور', icon:'🪩' },
+  { id:'solenoid', name:'المجال المغناطيسي لملف لولبي', icon:'🧲' },
+  { id:'capacitor', name:'المتسعة الكهربائية', icon:'🔋' }
 ];
 
 const DEFAULT_LAWS = {
@@ -476,7 +481,14 @@ const DEFAULT_LAWS = {
     { title:'محصلة قوتين متعاكستين', formula:'Fnet = F1 − F2', content:'إذا أثرت قوتان في اتجاهين متعاكسين على جسم، فإن محصلتهما تساوي الفرق بينهما وتكون باتجاه القوة الأكبر.' },
     { title:'العوامل المؤثرة في ضغط الغاز', formula:'', content:'يزداد ضغط الغاز المحصور بزيادة كمية الهواء المضافة إليه أو بارتفاع درجة حرارته عند ثبات الحجم.' },
     { title:'أشكال الطاقة', formula:'', content:'للطاقة أشكال متعددة كالطاقة الحركية والكامنة والحرارية والكهربائية والضوئية، ويمكن أن تتحول من شكل إلى آخر وفق مبدأ حفظ الطاقة.' },
-    { title:'قانون حفظ الطاقة', formula:'', content:'الطاقة لا تفنى ولا تستحدث من العدم، وإنما تتحول من شكل إلى آخر، ويبقى مجموعها الكلي في نظام معزول ثابتاً.' }
+    { title:'قانون حفظ الطاقة', formula:'', content:'الطاقة لا تفنى ولا تستحدث من العدم، وإنما تتحول من شكل إلى آخر، ويبقى مجموعها الكلي في نظام معزول ثابتاً.' },
+    { title:'معدل انطلاق الجسم', formula:'S = d_total / t_total', content:'معدل انطلاق الجسم يساوي المسافة الكلية التي قطعها مقسومة على الزمن الكلي المستغرق لقطعها.' },
+    { title:'الطاقة الحركية', formula:'K.E = ½ m v²', content:'تتناسب الطاقة الحركية للجسم طردياً مع كتلته وطردياً مع مربع سرعته؛ فزيادة السرعة تضاعف الطاقة الحركية بمقدار أكبر من زيادة الكتلة.' },
+    { title:'الفائدة الميكانيكية للآلة البسيطة', formula:'M.A = القوة الناتجة / القوة المؤثرة', content:'تقيس مدى قدرة الآلة البسيطة (كالعتلة والبكرة والإسفين) على مضاعفة القوة المؤثرة؛ فإذا كانت أكبر من الواحد نكون قد ربحنا قوة.' },
+    { title:'تعجيل الجاذبية على سطح القمر', formula:'g_قمر = (1/6) g_أرض ≈ 1.63 N/kg', content:'تعجيل الجاذبية على سطح القمر يساوي سدس تعجيل الجاذبية الأرضية تقريباً بسبب صغر كتلة القمر مقارنة بالأرض.' },
+    { title:'سرعة انطلاق الصوت', formula:'S = d / t', content:'سرعة انطلاق الصوت تساوي المسافة التي يقطعها الصوت مقسومة على الزمن المستغرق، وتزداد بزيادة مرونة الوسط الناقل وتقل بزيادة كثافته.' },
+    { title:'الموجات الطولية والمستعرضة', formula:'', content:'في الموجة الطولية (كالصوت) تهتز جزيئات الوسط باتجاه موازٍ لانتشار الموجة، بينما في الموجة المستعرضة (كموجة الوتر أو الضوء) تهتز عمودياً على اتجاه الانتشار.' },
+    { title:'الانعكاس الكلي الداخلي', formula:'θ > الزاوية الحرجة', content:'يحدث عندما يسقط الضوء من وسط أكثر كثافة ضوئية إلى وسط أقل كثافة بزاوية أكبر من الزاوية الحرجة، فينعكس الضوء بالكامل داخل الوسط الأول دون أن ينكسر خارجه.' }
   ],
   g3: [
     { title:'قانون نيوتن الثاني', formula:'F = m × a', content:'القوة المحصلة المؤثرة على جسم تساوي حاصل ضرب كتلته في تسارعه.' },
@@ -488,7 +500,14 @@ const DEFAULT_LAWS = {
     { title:'الأواني المستطرقة', formula:'', content:'في مجموعة أوانٍ مفتوحة متصلة من الأسفل، يرتفع السائل فيها جميعاً إلى المستوى الأفقي نفسه بغض النظر عن شكل كل إناء.' },
     { title:'انتقال الحرارة بالتوصيل', formula:'', content:'انتقال الطاقة الحرارية المباشر بين جزيئات المادة المتلامسة دون انتقال الجزيئات نفسها، ويحدث بكفاءة عالية في الفلزات.' },
     { title:'الشحنة الكهربائية الساكنة', formula:'', content:'تنشأ الكهرباء الساكنة نتيجة انتقال إلكترونات بين جسمين عند دلكهما، فيكتسب أحدهما شحنة سالبة والآخر موجبة.' },
-    { title:'الأقطاب المغناطيسية', formula:'', content:'لكل مغناطيس قطبان شمالي وجنوبي؛ الأقطاب المتشابهة تتنافر والمختلفة تتجاذب، ولا يمكن فصل قطب واحد بمفرده مهما قُطع المغناطيس.' }
+    { title:'الأقطاب المغناطيسية', formula:'', content:'لكل مغناطيس قطبان شمالي وجنوبي؛ الأقطاب المتشابهة تتنافر والمختلفة تتجاذب، ولا يمكن فصل قطب واحد بمفرده مهما قُطع المغناطيس.' },
+    { title:'شحن الأجسام بالتماس والحث', formula:'', content:'الشحن بالتماس يكسب الجسم شحنة مشابهة لشحنة الجسم الملامس له، بينما الشحن بالحث يكسبه شحنة مخالفة لشحنة الجسم المقرب منه دون تلامس مباشر.' },
+    { title:'أنواع المواد المغناطيسية', formula:'', content:'تصنف المواد إلى: فيرومغناطيسية (تنجذب بقوة كالحديد والنيكل)، وبارامغناطيسية (تنجذب بضعف كالألمنيوم)، ودايامغناطيسية (تتنافر ضعيفاً مع المغناطيس كالنحاس والفضة).' },
+    { title:'شدة التيار الكهربائي', formula:'I = q / t', content:'شدة التيار الكهربائي المار في موصل تساوي مقدار الشحنة الكهربائية العابرة خلال مقطعه مقسومة على الزمن المستغرق.' },
+    { title:'تجربة أورستد', formula:'', content:'أثبت العالم أورستد أن مرور تيار كهربائي في سلك موصل يولّد حوله مجالاً مغناطيسياً، مما يربط بين الكهرباء والمغناطيسية.' },
+    { title:'المحولة الكهربائية', formula:'N₂/N₁ = V₂/V₁', content:'نسبة عدد لفات الملف الثانوي إلى الابتدائي في المحولة الكهربائية تساوي نسبة الجهد الثانوي إلى الابتدائي؛ فالمحولة الرافعة تزيد الجهد والخافضة تخفضه.' },
+    { title:'المولد والمحرك الكهربائي', formula:'', content:'المولد الكهربائي يحوّل الطاقة الميكانيكية إلى طاقة كهربائية بالحث الكهرومغناطيسي، بينما المحرك الكهربائي يحوّل الطاقة الكهربائية إلى طاقة ميكانيكية.' },
+    { title:'مصادر الطاقة المتجددة وغير المتجددة', formula:'', content:'الطاقة المتجددة (كالشمسية والرياح والمائية) لا تنفد وصديقة للبيئة، بينما الطاقة غير المتجددة (كالوقود الأحفوري والنووي) محدودة وقابلة للنفاد.' }
   ],
   g4: [
     { title:'معادلات الحركة بتسارع ثابت', formula:'v = v₀ + a t', content:'تصف العلاقة بين السرعة النهائية والسرعة الابتدائية والتسارع والزمن.' },
@@ -500,7 +519,17 @@ const DEFAULT_LAWS = {
     { title:'حفظ الطاقة الميكانيكية', formula:'KE + PE = ثابت', content:'في غياب الاحتكاك، يبقى مجموع الطاقة الحركية والطاقة الكامنة لجسم ثابتاً أثناء حركته.' },
     { title:'القدرة', formula:'Power = W / t', content:'القدرة تمثل معدل إنجاز الشغل، أي كمية الشغل المنجز مقسومة على الزمن المستغرق لإنجازه.' },
     { title:'القوة الاحتكاكية', formula:'f = μ × N', content:'قوة تقاوم حركة أو ميل جسم للحركة على سطح آخر، وتتناسب طردياً مع القوة العمودية بينهما عبر معامل الاحتكاك μ.' },
-    { title:'التسارع', formula:'a = Δv / Δt', content:'التسارع هو معدل التغير في سرعة الجسم بالنسبة للزمن، ويكون موجباً عند تسارع الجسم وسالباً عند تباطئه.' }
+    { title:'التسارع', formula:'a = Δv / Δt', content:'التسارع هو معدل التغير في سرعة الجسم بالنسبة للزمن، ويكون موجباً عند تسارع الجسم وسالباً عند تباطئه.' },
+    { title:'معامل يونك (المرونة)', formula:'Y = (F/A) / (ΔL/L₀)', content:'يقيس معامل يونك مدى صلابة المادة، ويساوي نسبة الإجهاد المؤثر على المادة إلى المطاوعة الطولية النسبية الناتجة عنه.' },
+    { title:'أنواع المطاوعة (الإجهاد)', formula:'', content:'تتغير أبعاد الجسم الصلب تحت تأثير القوة بثلاث طرق: المطاوعة الطولية (تغير الطول)، ومطاوعة القص (انزياح جانبي)، والمطاوعة الحجمية (تغير الحجم بانضغاط منتظم).' },
+    { title:'الخاصية الشعرية', formula:'', content:'ترتفع السوائل أو تنخفض داخل الأنابيب الشعرية الضيقة حسب موازنة قوة تلاصق السائل بالوعاء مع قوة تماسك جزيئات السائل مع بعضها.' },
+    { title:'التمدد السطحي للمواد الصلبة', formula:'ΔA = γ A ΔT', content:'التغير في المساحة السطحية لجسم صلب يتناسب طردياً مع مساحته الأصلية ومع مقدار التغير في درجة حرارته، عبر معامل التمدد السطحي γ.' },
+    { title:'قانون سنيل ومعامل الانكسار', formula:'₁n₂ = sinθ₁/sinθ₂ = v₁/v₂', content:'معامل الانكسار النسبي بين وسطين شفافين يساوي نسبة جيب زاوية السقوط إلى جيب زاوية الانكسار، ويساوي أيضاً نسبة سرعتي الضوء في الوسطين.' },
+    { title:'القانون العام للمرايا الكروية', formula:'1/f = 1/u + 1/v', content:'يربط البعد البؤري للمرآة (f) ببعد الجسم عن قطبها (u) وبعد الصورة عن قطبها (v)، ويستخدم لتحديد موقع الصورة المتكونة في المرايا المقعرة والمحدبة.' },
+    { title:'قانون التكبير في المرايا والعدسات', formula:'M = h′/h = −v/u', content:'التكبير يساوي النسبة بين طول الصورة وطول الجسم، ويساوي كذلك سالب نسبة بعد الصورة إلى بعد الجسم عن المرآة أو العدسة.' },
+    { title:'قانون كولوم', formula:'F = k q q′ / r²', content:'القوة الكهربائية بين شحنتين نقطيتين تتناسب طردياً مع حاصل ضرب مقداري الشحنتين وعكسياً مع مربع المسافة بينهما، حيث k ≈ 9×10⁹ N·m²/C².' },
+    { title:'شدة المجال الكهربائي', formula:'E = F/q′ = k q / r²', content:'المجال الكهربائي الناشئ عن شحنة نقطية عند نقطة يساوي القوة المؤثرة في شحنة اختبار موجبة صغيرة عند تلك النقطة مقسومة على مقدار شحنة الاختبار.' },
+    { title:'الموصلات والعوازل وأشباه الموصلات', formula:'', content:'الموصلات (كالفضة والنحاس) تسمح للإلكترونات بالحركة بحرية، والعوازل (كالزجاج والمطاط) لا تسمح بذلك، بينما أشباه الموصلات (كالسيليكون والجرمانيوم) توصل بشكل متوسط وتستخدم في الترانزستورات.' }
   ],
   g5: [
     { title:'قانون الجذب العام لنيوتن', formula:'F = G m₁m₂ / r²', content:'كل جسمين يتجاذبان بقوة تتناسب طردياً مع حاصل ضرب كتلتيهما وعكسياً مع مربع المسافة بينهما.' },
@@ -512,19 +541,34 @@ const DEFAULT_LAWS = {
     { title:'سرعة الموجة', formula:'v = f × λ', content:'سرعة انتشار أي موجة تساوي حاصل ضرب ترددها في طول موجتها.' },
     { title:'الحرارة النوعية', formula:'Q = m c ΔT', content:'كمية الحرارة اللازمة لتغيير درجة حرارة مادة تتناسب طردياً مع كتلتها وحرارتها النوعية والتغير في درجة الحرارة.' },
     { title:'قانون سنيل للانكسار', formula:'n₁ sinθ₁ = n₂ sinθ₂', content:'عند انتقال الضوء بين وسطين مختلفي الكثافة الضوئية، ينحرف الشعاع وفق العلاقة بين معاملي انكسار الوسطين وزاويتي السقوط والانكسار.' },
-    { title:'الحرارة الكامنة للتبخر', formula:'Q = m L', content:'كمية الحرارة اللازمة لتحويل كتلة معينة من مادة من الحالة السائلة إلى الغازية دون تغيير درجة حرارتها.' }
+    { title:'الحرارة الكامنة للتبخر', formula:'Q = m L', content:'كمية الحرارة اللازمة لتحويل كتلة معينة من مادة من الحالة السائلة إلى الغازية دون تغيير درجة حرارتها.' },
+    { title:'الشغل العام لقوة مائلة', formula:'W = F × x × cosθ', content:'شغل قوة مؤثرة بزاوية θ عن اتجاه الإزاحة يساوي حاصل ضرب مقدار القوة في الإزاحة وفي جيب تمام الزاوية بينهما.' },
+    { title:'العمليات الديناميكية الحرارية', formula:'', content:'تشمل العملية الإيزوبارية (ثبوت الضغط)، والإيزوكورية (ثبوت الحجم)، والإيزوثرمية (ثبوت درجة الحرارة)، والأديباتية (عدم انتقال حرارة من أو إلى النظام).' },
+    { title:'نطاق السمع البشري', formula:'20 Hz – 20000 Hz', content:'تستطيع الأذن البشرية سماع الموجات الصوتية التي يتراوح ترددها بين 20 هرتز و20000 هرتز فقط.' },
+    { title:'قاعدة كيرشوف للعقدة والحلقة', formula:'ΣΔV = 0 (حلقة مغلقة)', content:'مجموع فروق الجهد الجبري عبر جميع العناصر حول أي دارة كهربائية مغلقة يساوي صفراً، وهو تعبير خاص عن قانون حفظ الطاقة في الدارات الكهربائية.' },
+    { title:'جهد طرفي البطارية مع المقاومة الداخلية', formula:'V_ab = ε − I r', content:'فرق الجهد بين طرفي مصدر جهد كهربائي يساوي قوته الدافعة الكهربائية ε مطروحاً منها الهبوط في الجهد نتيجة مقاومته الداخلية r.' },
+    { title:'المجال المغناطيسي لملف لولبي (سولينويد)', formula:'B = μ₀ n I', content:'كثافة الفيض المغناطيسي داخل ملف لولبي طويل تتناسب طردياً مع عدد اللفات لوحدة الطول n وشدة التيار المار فيه I.' }
   ],
   g6: [
     { title:'قانون أوم', formula:'V = I × R', content:'فرق الجهد بين طرفي موصل يساوي حاصل ضرب التيار المار فيه في مقاومته.' },
     { title:'قانون كولوم', formula:'F = k q₁q₂ / r²', content:'القوة بين شحنتين نقطيتين تتناسب طردياً مع حاصل ضرب الشحنتين وعكسياً مع مربع المسافة بينهما.' },
     { title:'طاقة الفوتون (تأثير الكم)', formula:'E = h × f', content:'طاقة الفوتون تساوي حاصل ضرب ثابت بلانك في تردد الإشعاع الكهرومغناطيسي.' },
-    { title:'القدرة الكهربائية', formula:'P = V × I', content:'القدرة الكهربائية المستهلكة في عنصر الدارة تساوي حاصل ضرب فرق الجهد عبره في التيار المار فيه.' },
+    { title:'القدرة الكهربائية', formula:'P = V × I', content:'القدرة الكهربائية المستهلكة في عنصر الدائرة تساوي حاصل ضرب فرق الجهد عبره في التيار المار فيه.' },
     { title:'قانون فاراداي للحث الكهرومغناطيسي', formula:'ε = -N (ΔΦ/Δt)', content:'القوة الدافعة الكهربائية المستحثة في ملف تتناسب طردياً مع معدل تغير التدفق المغناطيسي خلاله.' },
     { title:'المقاومات على التوالي', formula:'R_total = R1 + R2 + ...', content:'عند توصيل مقاومات على التوالي في دارة، تجمع مقاوماتها الفردية للحصول على المقاومة الكلية.' },
     { title:'المقاومات على التوازي', formula:'1/R_total = 1/R1 + 1/R2', content:'عند توصيل مقاومات على التوازي، مقلوب المقاومة الكلية يساوي مجموع مقلوب كل مقاومة على حدة.' },
     { title:'معادلة أينشتاين للكتلة والطاقة', formula:'E = m c²', content:'تنص على أن الطاقة والكتلة متكافئتان، وأن كمية صغيرة من الكتلة يمكن أن تتحول إلى كمية هائلة من الطاقة.' },
     { title:'قانون لنز', formula:'', content:'اتجاه التيار الكهربائي المستحث في ملف يكون دائماً بحيث يعاكس التغير في التدفق المغناطيسي الذي أنتجه، حفاظاً على مبدأ حفظ الطاقة.' },
-    { title:'التأثير الكهروضوئي', formula:'E = hf − W', content:'انبعاث إلكترونات من سطح فلزي عند سقوط ضوء ذي تردد كافٍ عليه، وتعتمد طاقة الإلكترونات المنبعثة على تردد الضوء لا على شدته.' }
+    { title:'التأثير الكهروضوئي', formula:'E = hf − W', content:'انبعاث إلكترونات من سطح فلزي عند سقوط ضوء ذي تردد كافٍ عليه، وتعتمد طاقة الإلكترونات المنبعثة على تردد الضوء لا على شدته.' },
+    { title:'سعة المتسعة الكهربائية', formula:'C = Q / ΔV', content:'سعة المتسعة تساوي مقدار الشحنة المخزنة على إحدى صفيحتيها مقسومة على فرق الجهد بينهما؛ وتزداد السعة بزيادة مساحة الصفيحتين وتقل بزيادة المسافة بينهما.' },
+    { title:'معامل الحث الذاتي', formula:'L = ε_ind / (−ΔI/Δt)', content:'معامل الحث الذاتي لملف يساوي نسبة القوة الدافعة الكهربائية المحتثة فيه إلى المعدل الزمني لتغير التيار المار فيه، ويقاس بوحدة الهنري.' },
+    { title:'رادة السعة في دارة التيار المتناوب', formula:'Xc = 1 / (2πfC)', content:'رادة السعة تمثل المعاكسة التي تبديها المتسعة للتغير في فولطية دارة التيار المتناوب، وتقل بزيادة التردد وسعة المتسعة.' },
+    { title:'خصائص الموجات الكهرومغناطيسية', formula:'', content:'موجات مستعرضة تتألف من مجالين كهربائي ومغناطيسي متعامدين ومتزامنين، تنتشر في الفراغ بسرعة الضوء ولا تحتاج وسطاً مادياً للانتقال.' },
+    { title:'حيود الضوء عبر شبكة الحيود', formula:'d sinθ = m λ', content:'تتكون أهداب مضيئة عند زوايا معينة عندما يمر الضوء عبر شبكة حيود، حيث d المسافة بين الشقوق وm رتبة الهدب المضيء وλ طول الموجة.' },
+    { title:'استقطاب الضوء', formula:'', content:'الاستقطاب هو حصر اهتزاز المجال الكهربائي للضوء في اتجاه واحد فقط، ويُعد دليلاً قاطعاً على الطبيعة المستعرضة للموجات الضوئية.' },
+    { title:'الكتلة النسبية', formula:'m = m₀ / √(1 − v²/c²)', content:'وفق النظرية النسبية الخاصة، تزداد كتلة الجسم المتحرك بازدياد سرعته النسبية، ويصبح هذا التغير محسوساً فقط عند سرعات قريبة من سرعة الضوء.' },
+    { title:'أشباه الموصلات والثنائي البلوري', formula:'', content:'أشباه الموصلات كالسيليكون والجرمانيوم توصل الكهرباء جزئياً، ويسمح تطعيمها بشوائب معينة (n أو p) بصنع الثنائي البلوري الذي يسمح بمرور التيار باتجاه واحد فقط.' },
+    { title:'الانحلال الإشعاعي وطاقة انحلال ألفا', formula:'Qα = [Mₚ − M_d − Mα] c²', content:'تتحول الأنوية غير المستقرة إلى أنوية أخرى مصحوبة بانبعاث إشعاع ألفا أو بيتا أو كاما، وتحسب طاقة الانحلال من الفرق بين كتلة النواة الأم وكتلتي النواة الوليدة والجسيمة المنبعثة مضروباً في مربع سرعة الضوء.' }
   ]
 };
 
@@ -735,6 +779,11 @@ function loadActivitiesTab(gradeId){
       if(id==='refraction') initRefractionActivity(card);
       if(id==='collision') initCollisionActivity(card);
       if(id==='seriesparallel') initSeriesParallelActivity(card);
+      if(id==='wavetype') initWaveTypeActivity(card);
+      if(id==='transformer') initTransformerActivity(card);
+      if(id==='mirror') initMirrorActivity(card);
+      if(id==='solenoid') initSolenoidActivity(card);
+      if(id==='capacitor') initCapacitorActivity(card);
     });
   })
   .catch(err=>{ list.innerHTML = `<div class="empty-state"><b>خطأ</b>${esc(err.message)}</div>`; });
@@ -956,7 +1005,7 @@ function initInclineActivity(card){
 
 function initCircuitActivity(card){
   card.innerHTML = `
-    <h4>🔋 مختبر الدارة الكهربائية البسيطة</h4>
+    <h4>🔋 مختبر الدائرة الكهربائية البسيطة</h4>
     <div class="activity-note">دارة بسيطة تتكوّن من بطارية ومقاومة (مصباح)؛ سطوع المصباح يعكس شدة التيار المحسوبة بقانون أوم.</div>
     <canvas width="280" height="220"></canvas>
     <div class="activity-controls">
@@ -1651,6 +1700,302 @@ function initSeriesParallelActivity(card){
   update();
 }
 
+/* ---- Transverse vs longitudinal waves ---- */
+function initWaveTypeActivity(card){
+  card.innerHTML = `
+    <h4>🎵 الموجات الطولية والمستعرضة</h4>
+    <div class="activity-note">بدّل بين نوعي الموجة وشاهد كيف تهتز جزيئات الوسط: عمودياً على اتجاه الانتشار في المستعرضة (كموجة الوتر)، أو موازياً له في الطولية (كموجة الصوت).</div>
+    <canvas width="300" height="140"></canvas>
+    <div class="activity-controls">
+      <div style="display:flex; gap:8px; justify-content:center; margin:4px 0;">
+        <button class="btn btn-yellow wtTrans">مستعرضة</button>
+        <button class="btn btn-outline wtLong">طولية</button>
+      </div>
+      <div class="formula-panel wtFormula"></div>
+    </div>`;
+  const canvas = card.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const transBtn = card.querySelector('.wtTrans'), longBtn = card.querySelector('.wtLong');
+  const formulaEl = card.querySelector('.wtFormula');
+  let mode = 'transverse', t=0, lastTs=null;
+  const N = 24, spacing = 300/N;
+
+  function updateInfo(){
+    formulaEl.innerHTML = mode==='transverse'
+      ? 'موجة مستعرضة: اهتزاز الجزيئات عمودي على اتجاه انتشار الموجة.<small>أمثلة: موجة الوتر، الضوء، الموجات الكهرومغناطيسية.</small>'
+      : 'موجة طولية: اهتزاز الجزيئات موازٍ لاتجاه انتشار الموجة (تضاغط وتخلخل).<small>أمثلة: الصوت، الموجات الزلزالية الأولية.</small>';
+  }
+  function draw(ts){
+    if(!lastTs) lastTs=ts;
+    const dt=(ts-lastTs)/1000; lastTs=ts;
+    t += dt;
+    ctx.clearRect(0,0,300,140);
+    ctx.fillStyle = '#F0CE6E';
+    if(mode==='transverse'){
+      for(let i=0;i<N;i++){
+        const x = i*spacing+spacing/2;
+        const y = 70 + 35*Math.sin(2*Math.PI*(i/6 - t*1.5));
+        ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
+      }
+    } else {
+      for(let i=0;i<N;i++){
+        const baseX = i*spacing+spacing/2;
+        const x = baseX + 18*Math.sin(2*Math.PI*(i/6 - t*1.5));
+        ctx.beginPath(); ctx.arc(x,70,5,0,Math.PI*2); ctx.fill();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  transBtn.addEventListener('click', ()=>{ mode='transverse'; transBtn.className='btn btn-yellow wtTrans'; longBtn.className='btn btn-outline wtLong'; updateInfo(); });
+  longBtn.addEventListener('click', ()=>{ mode='longitudinal'; longBtn.className='btn btn-yellow wtLong'; transBtn.className='btn btn-outline wtTrans'; updateInfo(); });
+  updateInfo();
+  requestAnimationFrame(draw);
+}
+
+/* ---- Electrical transformer: turns ratio ---- */
+function initTransformerActivity(card){
+  card.innerHTML = `
+    <h4>🔃 المحولة الكهربائية</h4>
+    <div class="activity-note">غيّر عدد لفات الملف الثانوي وجهد الدخل، وشاهد جهد الخرج يتغير حسب نسبة اللفات — هذا مبدأ عمل المحولات الرافعة والخافضة.</div>
+    <canvas width="280" height="180"></canvas>
+    <div class="activity-controls">
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">جهد الدخل V₁</span><span class="slider-value trV1Val">120 V</span></div>
+        <input type="range" min="10" max="240" step="10" value="120" class="trV1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">لفات الملف الابتدائي N₁</span><span class="slider-value trN1Val">100</span></div>
+        <input type="range" min="20" max="200" step="10" value="100" class="trN1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">لفات الملف الثانوي N₂</span><span class="slider-value trN2Val">400</span></div>
+        <input type="range" min="20" max="800" step="10" value="400" class="trN2">
+      </div>
+      <div class="formula-panel trFormula"></div>
+    </div>`;
+  const canvas = card.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const v1I = card.querySelector('.trV1'), n1I = card.querySelector('.trN1'), n2I = card.querySelector('.trN2');
+  const v1V = card.querySelector('.trV1Val'), n1V = card.querySelector('.trN1Val'), n2V = card.querySelector('.trN2Val');
+  const formulaEl = card.querySelector('.trFormula');
+
+  function update(){
+    v1V.textContent = v1I.value+' V'; n1V.textContent = n1I.value; n2V.textContent = n2I.value;
+    const V1=+v1I.value, N1=+n1I.value, N2=+n2I.value;
+    const V2 = V1 * (N2/N1);
+    const type = N2>N1 ? 'محوّلة رافعة (تزيد الجهد)' : (N2<N1 ? 'محوّلة خافضة (تخفض الجهد)' : 'محوّلة عزل (نفس الجهد)');
+    formulaEl.innerHTML = `N₂/N₁ = V₂/V₁<br>V₂ ≈ ${V2.toFixed(0)} V<small>${type}</small>`;
+    draw();
+  }
+  function draw(){
+    ctx.clearRect(0,0,280,180);
+    ctx.strokeStyle = '#547059'; ctx.lineWidth=6; ctx.strokeRect(110,30,60,120);
+    ctx.strokeStyle = '#F0CE6E'; ctx.lineWidth=2;
+    for(let i=0;i<8;i++){ ctx.beginPath(); ctx.arc(110, 40+i*13, 8, Math.PI*0.5, Math.PI*1.5); ctx.stroke(); }
+    ctx.strokeStyle = '#8FBFCB';
+    for(let i=0;i<8;i++){ ctx.beginPath(); ctx.arc(170, 40+i*13, 8, -Math.PI*0.5, Math.PI*0.5); ctx.stroke(); }
+    ctx.fillStyle = '#F3EFE2'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('ابتدائي', 90, 165);
+    ctx.fillText('ثانوي', 190, 165);
+  }
+  [v1I,n1I,n2I].forEach(inp=>inp.addEventListener('input', update));
+  update();
+}
+
+/* ---- Spherical mirrors: image formation using 1/f = 1/u + 1/v ---- */
+function initMirrorActivity(card){
+  card.innerHTML = `
+    <h4>🪩 المرايا الكروية وتكوين الصور</h4>
+    <div class="activity-note">غيّر بعد الجسم عن المرآة ونوعها (مقعرة/محدبة) وشاهد موقع الصورة ونوعها يتغير فعلياً حسب القانون العام للمرايا 1/f = 1/u + 1/v.</div>
+    <canvas width="300" height="200"></canvas>
+    <div class="activity-controls">
+      <div style="display:flex; gap:8px; justify-content:center; margin:4px 0;">
+        <button class="btn btn-yellow mrConcave">مقعرة</button>
+        <button class="btn btn-outline mrConvex">محدبة</button>
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">بعد الجسم (u)</span><span class="slider-value mrUVal">30 سم</span></div>
+        <input type="range" min="5" max="100" step="1" value="30" class="mrU">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">البعد البؤري (f)</span><span class="slider-value mrFVal">15 سم</span></div>
+        <input type="range" min="5" max="60" step="1" value="15" class="mrF">
+      </div>
+      <div class="formula-panel mrFormula"></div>
+    </div>`;
+  const canvas = card.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const concaveBtn = card.querySelector('.mrConcave'), convexBtn = card.querySelector('.mrConvex');
+  const uI = card.querySelector('.mrU'), fI = card.querySelector('.mrF');
+  const uV = card.querySelector('.mrUVal'), fV = card.querySelector('.mrFVal');
+  const formulaEl = card.querySelector('.mrFormula');
+  let isConcave = true;
+
+  function compute(){
+    const u = +uI.value;
+    const f = isConcave ? +fI.value : -(+fI.value);
+    const v = 1/((1/f) - (1/u));
+    const M = -v/u;
+    return { u, f, v, M };
+  }
+  function update(){
+    uV.textContent = uI.value+' سم'; fV.textContent = fI.value+' سم';
+    const { v, M } = compute();
+    const imgType = v>0 ? 'حقيقية ومقلوبة' : 'خيالية ومعتدلة';
+    formulaEl.innerHTML = `1/f = 1/u + 1/v<br>بعد الصورة v ≈ ${v.toFixed(1)} سم &nbsp;|&nbsp; التكبير M ≈ ${M.toFixed(2)}<small>الصورة ${imgType}${Math.abs(M)>1?'، مكبرة':(Math.abs(M)<1?'، مصغرة':'، بنفس حجم الجسم')}</small>`;
+    draw();
+  }
+  function draw(){
+    const { u, f, v, M } = compute();
+    const scale = 80/Math.max(u, Math.abs(v), f, 40);
+    const mx = 220;
+    ctx.clearRect(0,0,300,200);
+    ctx.strokeStyle = '#547059'; ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(0,100); ctx.lineTo(300,100); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#8FBFCB'; ctx.lineWidth=4;
+    ctx.beginPath();
+    if(isConcave) ctx.arc(mx+70, 100, 70, Math.PI*0.65, Math.PI*1.35);
+    else ctx.arc(mx-70, 100, 70, -Math.PI*0.35, Math.PI*0.35);
+    ctx.stroke();
+    const objX = mx - u*scale, objH = 30;
+    ctx.strokeStyle = '#F0CE6E'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(objX,100); ctx.lineTo(objX,100-objH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(objX-4,100-objH+8); ctx.lineTo(objX,100-objH); ctx.lineTo(objX+4,100-objH+8); ctx.stroke();
+    const imgX = mx - v*scale;
+    const imgH = objH*M;
+    ctx.strokeStyle = '#E58F76';
+    ctx.beginPath(); ctx.moveTo(imgX,100); ctx.lineTo(imgX,100-imgH); ctx.stroke();
+    ctx.beginPath();
+    const dir = imgH>=0? 8 : -8;
+    ctx.moveTo(imgX-4,100-imgH+dir); ctx.lineTo(imgX,100-imgH); ctx.lineTo(imgX+4,100-imgH+dir); ctx.stroke();
+  }
+  concaveBtn.addEventListener('click', ()=>{ isConcave=true; concaveBtn.className='btn btn-yellow mrConcave'; convexBtn.className='btn btn-outline mrConvex'; update(); });
+  convexBtn.addEventListener('click', ()=>{ isConcave=false; convexBtn.className='btn btn-yellow mrConvex'; concaveBtn.className='btn btn-outline mrConcave'; update(); });
+  uI.addEventListener('input', update);
+  fI.addEventListener('input', update);
+  update();
+}
+
+/* ---- Solenoid magnetic field: B = μ0 n I ---- */
+function initSolenoidActivity(card){
+  card.innerHTML = `
+    <h4>🧲 المجال المغناطيسي لملف لولبي</h4>
+    <div class="activity-note">غيّر عدد لفات الملف وشدة التيار وطول الملف، وشاهد كثافة الفيض المغناطيسي (وكثافة خطوط المجال المرسومة) تتغير حسب B = μ₀nI.</div>
+    <canvas width="280" height="160"></canvas>
+    <div class="activity-controls">
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">عدد اللفات N</span><span class="slider-value solNVal">200</span></div>
+        <input type="range" min="20" max="500" step="10" value="200" class="solN">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">التيار I (A)</span><span class="slider-value solIVal">2 A</span></div>
+        <input type="range" min="1" max="10" step="0.5" value="2" class="solI">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">طول الملف L (سم)</span><span class="slider-value solLVal">20 سم</span></div>
+        <input type="range" min="5" max="50" step="1" value="20" class="solL">
+      </div>
+      <div class="formula-panel solFormula"></div>
+    </div>`;
+  const canvas = card.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const nI = card.querySelector('.solN'), iI = card.querySelector('.solI'), lI = card.querySelector('.solL');
+  const nV = card.querySelector('.solNVal'), iV = card.querySelector('.solIVal'), lV = card.querySelector('.solLVal');
+  const formulaEl = card.querySelector('.solFormula');
+  const mu0 = 4*Math.PI*1e-7;
+
+  function update(){
+    nV.textContent = nI.value; iV.textContent = iI.value+' A'; lV.textContent = lI.value+' سم';
+    const N=+nI.value, I=+iI.value, L=(+lI.value)/100;
+    const n = N/L;
+    const B = mu0*n*I;
+    formulaEl.innerHTML = `B = μ₀ n I &nbsp;(n = N/L)<br>n ≈ ${n.toFixed(0)} لفة/م &nbsp;|&nbsp; B ≈ ${(B*1000).toFixed(2)} mT<small>كلما زاد عدد اللفات أو التيار أو قصُر الملف، زادت كثافة الفيض المغناطيسي داخله.</small>`;
+    draw(B);
+  }
+  function draw(B){
+    ctx.clearRect(0,0,280,160);
+    const loops = Math.min(16, Math.max(4, Math.round(+nI.value/25)));
+    const spacing = 200/loops;
+    ctx.strokeStyle = '#F0CE6E'; ctx.lineWidth=2;
+    for(let i=0;i<loops;i++){
+      const x = 40+i*spacing;
+      ctx.beginPath(); ctx.ellipse(x,80,10,45,0,0,Math.PI*2); ctx.stroke();
+    }
+    const density = Math.min(10, Math.max(2, B*4000));
+    ctx.strokeStyle = '#8FBFCB'; ctx.lineWidth=1.5;
+    const nLines = Math.round(density);
+    for(let i=0;i<nLines;i++){
+      const y = 40 + i*(80/Math.max(1,nLines-1));
+      ctx.beginPath(); ctx.moveTo(20,y); ctx.lineTo(260,y);
+      ctx.stroke();
+    }
+  }
+  [nI,iI,lI].forEach(inp=>inp.addEventListener('input', update));
+  update();
+}
+
+/* ---- Parallel-plate capacitor: C = ε0 A/d, Q = CV ---- */
+function initCapacitorActivity(card){
+  card.innerHTML = `
+    <h4>🔋 المتسعة الكهربائية</h4>
+    <div class="activity-note">غيّر مساحة الصفيحتين والمسافة بينهما وفرق الجهد، وشاهد سعة المتسعة والشحنة المخزنة تتغيران فعلياً، مع رسم يقرّب المسافة بين الصفيحتين بصرياً.</div>
+    <canvas width="260" height="160"></canvas>
+    <div class="activity-controls">
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">مساحة الصفيحة A (سم²)</span><span class="slider-value capAVal">50 سم²</span></div>
+        <input type="range" min="10" max="200" step="5" value="50" class="capA">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">المسافة بين الصفيحتين d (مم)</span><span class="slider-value capDVal">5 مم</span></div>
+        <input type="range" min="1" max="20" step="1" value="5" class="capD">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span class="slider-label">فرق الجهد V</span><span class="slider-value capVVal">10 V</span></div>
+        <input type="range" min="1" max="50" step="1" value="10" class="capV">
+      </div>
+      <div class="formula-panel capFormula"></div>
+    </div>`;
+  const canvas = card.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const aI = card.querySelector('.capA'), dI = card.querySelector('.capD'), vI = card.querySelector('.capV');
+  const aV = card.querySelector('.capAVal'), dV = card.querySelector('.capDVal'), vV = card.querySelector('.capVVal');
+  const formulaEl = card.querySelector('.capFormula');
+  const eps0 = 8.85e-12;
+
+  function update(){
+    aV.textContent = aI.value+' سم²'; dV.textContent = dI.value+' مم'; vV.textContent = vI.value+' V';
+    const A = (+aI.value)*1e-4, d = (+dI.value)*1e-3, V = +vI.value;
+    const C = eps0*A/d;
+    const Q = C*V;
+    formulaEl.innerHTML = `C = ε₀A/d &nbsp;، &nbsp;Q = CV<br>C ≈ ${(C*1e12).toFixed(2)} pF &nbsp;|&nbsp; Q ≈ ${(Q*1e12).toFixed(2)} pC<small>تزداد السعة بزيادة مساحة الصفيحتين وتقل بزيادة المسافة بينهما.</small>`;
+    draw();
+  }
+  function draw(){
+    ctx.clearRect(0,0,260,160);
+    const d = +dI.value;
+    const gap = Math.max(20, Math.min(140, d*7));
+    const plateH = 30 + Math.sqrt(+aI.value)*4;
+    const cx = 130;
+    const x1 = cx - gap/2, x2 = cx + gap/2;
+    const topY = 80 - plateH/2, botY = 80 + plateH/2;
+    ctx.strokeStyle = '#F0CE6E'; ctx.lineWidth=6;
+    ctx.beginPath(); ctx.moveTo(x1,topY); ctx.lineTo(x1,botY); ctx.stroke();
+    ctx.strokeStyle = '#8FBFCB';
+    ctx.beginPath(); ctx.moveTo(x2,topY); ctx.lineTo(x2,botY); ctx.stroke();
+    ctx.fillStyle = '#F3EFE2'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('+', x1, topY-8);
+    ctx.fillText('−', x2, topY-8);
+    ctx.strokeStyle = '#547059'; ctx.setLineDash([2,3]);
+    for(let y=topY+8; y<botY; y+=10){
+      ctx.beginPath(); ctx.moveTo(x1+3,y); ctx.lineTo(x2-3,y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+  [aI,dI,vI].forEach(inp=>inp.addEventListener('input', update));
+  update();
+}
+
 
 function openUploadModal(gradeId, hwId, hwTitle){
   window._pendingHw = { gradeId, hwId, hwTitle };
@@ -1834,7 +2179,7 @@ function loadAdminList(){
           </div>
           <div class="acts">
             ${d ? `<button class="icon-btn" onclick="previewBookFile('${chapNum}')">👁</button>` : ''}
-            <button class="icon-btn" onclick="openBookUploadModal('${chapNum}', ${JSON.stringify(label)})">${d?'🔄':'⬆'}</button>
+            <button class="icon-btn" onclick="openBookUploadModal('${chapNum}')">${d?'🔄':'⬆'}</button>
             ${d ? `<button class="icon-btn del" onclick="deleteBookFile('${chapNum}')">🗑</button>` : ''}
           </div>
         </div>`;
@@ -2006,8 +2351,9 @@ function saveItem(id){
 }
 
 /* ================= COURSE BOOK (ADMIN UPLOAD) ================= */
-function openBookUploadModal(chapNum, label){
+function openBookUploadModal(chapNum){
   window._pendingChapter = chapNum;
+  const label = CHAPTER_LABELS[parseInt(chapNum,10)-1] || ('الفصل ' + chapNum);
   document.getElementById('modalRoot').innerHTML = `
   <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
     <div class="modal">
