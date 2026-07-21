@@ -17,6 +17,84 @@
 <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-storage-compat.min.js"></script>
+<script type="module">
+  // Firebase AI Logic (Gemini Developer API) — free tier, no billing account
+  // required. Loaded as a separate named app instance so it never collides
+  // with the compat SDK app used for Firestore/Storage above.
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+  import { getAI, getGenerativeModel, GoogleAIBackend } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-ai.js';
+
+  const aiFirebaseConfig = {
+    apiKey: "AIzaSyBsXLpC1x3nw8UPA2QWVBKhhAnRKjV0RPc",
+    authDomain: "physical-1-fd535.firebaseapp.com",
+    projectId: "physical-1-fd535",
+    storageBucket: "physical-1-fd535.firebasestorage.app",
+    messagingSenderId: "1023621128960",
+    appId: "1:1023621128960:web:c71f53a48677b03ab649e5"
+  };
+
+  const TUTOR_SYSTEM_INSTRUCTION = `أنت مساعد تعليمي لمادة الفيزياء لطلاب العراق (من الأول متوسط إلى السادس العلمي)، تشتغل داخل منصة تعليمية.
+قواعدك:
+1. لا تعطِ الجواب النهائي مباشرة أبداً. اشرح خطوة بخطوة وشجّع الطالب يفكر ويحاول بنفسه بين كل خطوة والثانية.
+2. اربط الحل بالقوانين والوحدات الفيزيائية الصحيحة، واذكر القانون المستخدم بوضوح.
+3. استخدم لغة عربية بسيطة وواضحة تناسب عمر الطالب، وتجنب الرموز المعقدة غير الضرورية.
+4. إذا كان السؤال غامضاً أو ناقص المعطيات، اسأل الطالب عن التفاصيل الناقصة بدل التخمين.
+5. إذا سأل الطالب عن شيء خارج مادة الفيزياء تماماً، اعتذر بلطف ووجّهه للتركيز على المادة.
+6. خلّي ردودك مختصرة ومركزة (فقرات قصيرة)، لا تكتب مقالاً طويلاً.`;
+
+  let _chatModel = null;
+  function getChatModel(){
+    if(_chatModel) return _chatModel;
+    const aiApp = initializeApp(aiFirebaseConfig, 'aiLogicApp');
+    const ai = getAI(aiApp, { backend: new GoogleAIBackend() });
+    _chatModel = getGenerativeModel(ai, {
+      model: 'gemini-2.5-flash-lite',
+      systemInstruction: TUTOR_SYSTEM_INSTRUCTION
+    });
+    return _chatModel;
+  }
+
+  let _genModel = null;
+  function getGenModel(){
+    if(_genModel) return _genModel;
+    const aiApp = initializeApp(aiFirebaseConfig, 'aiLogicApp2');
+    const ai = getAI(aiApp, { backend: new GoogleAIBackend() });
+    _genModel = getGenerativeModel(ai, { model: 'gemini-2.5-flash-lite' });
+    return _genModel;
+  }
+
+  // Ask the tutor a question, with optional prior turns for context.
+  // history: array of {role:'user'|'model', text}
+  window.askPhysicsAI = async function(prompt, history){
+    const model = getChatModel();
+    const chat = model.startChat({
+      history: (history||[]).map(h=>({ role: h.role, parts: [{ text: h.text }] }))
+    });
+    const result = await chat.sendMessage(prompt);
+    return result.response.text();
+  };
+
+  // Generate N practice questions for a topic/difficulty as structured JSON.
+  window.generatePhysicsQuestions = async function(topic, difficulty, count){
+    const model = getGenModel();
+    const prompt = `اكتب ${count} أسئلة أو مسائل فيزيائية أصلية بمستوى صعوبة "${difficulty}" عن موضوع: "${topic}".
+لكل سؤال أعطِ: عنوان قصير (title)، نص السؤال كاملاً مع المعطيات (content)، والصيغة أو القانون المستخدم للحل إن وجد (formula، اتركه فارغاً إن لم يوجد).
+أجب بصيغة JSON فقط، مصفوفة من الكائنات بهذا الشكل: [{"title":"...","content":"...","formula":"..."}]`;
+    const result = await model.generateContent({
+      contents: [{ role:'user', parts:[{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' }
+    });
+    const raw = result.response.text();
+    try{
+      return JSON.parse(raw);
+    }catch(e){
+      const match = raw.match(/\[[\s\S]*\]/);
+      if(match) return JSON.parse(match[0]);
+      throw new Error('تعذّر فهم رد الذكاء الاصطناعي.');
+    }
+  };
+</script>
 <style>
 :root{
   --bg:#1B2620;
@@ -34,7 +112,36 @@
   --muted:#82977F;
   --danger:#E07A6B;
   --success:#8FC79B;
+  --header-bg:rgba(27,38,32,.85);
 }
+body[data-theme="light"]{
+  --bg:#F5F1E6;
+  --bg2:#EDE6D2;
+  --surface:#FFFFFF;
+  --card:#FFFFFF;
+  --card-hover:#F6F1E3;
+  --line:#DCD4BC;
+  --line-strong:#B9AD85;
+  --chalk:#2B2A22;
+  --chalk-dim:#5C5847;
+  --yellow:#B8860F;
+  --coral:#C15A3E;
+  --blue:#2E7D8F;
+  --muted:#79735D;
+  --danger:#C0392B;
+  --success:#2E8B47;
+  --header-bg:rgba(255,255,255,.85);
+}
+body[data-theme="light"]{
+  background-image:
+    radial-gradient(circle at 15% 8%, rgba(0,0,0,0.02) 0, transparent 3%),
+    radial-gradient(circle at 75% 20%, rgba(0,0,0,0.018) 0, transparent 2.5%),
+    radial-gradient(circle at 40% 60%, rgba(0,0,0,0.018) 0, transparent 2%),
+    radial-gradient(circle at 90% 80%, rgba(0,0,0,0.02) 0, transparent 3%),
+    radial-gradient(circle at 25% 90%, rgba(0,0,0,0.015) 0, transparent 2%);
+}
+body[data-theme="light"] .hero-bg{ opacity:.08; }
+body[data-theme="light"] ::selection{ background:var(--yellow); color:#fff; }
 *{box-sizing:border-box; margin:0; padding:0;}
 html,body{height:100%;}
 body{
@@ -44,6 +151,7 @@ body{
   min-height:100vh;
   position:relative;
   overflow-x:hidden;
+  transition:background-color .3s ease, color .3s ease;
   background-image:
     radial-gradient(circle at 15% 8%, rgba(255,255,255,0.025) 0, transparent 3%),
     radial-gradient(circle at 75% 20%, rgba(255,255,255,0.02) 0, transparent 2.5%),
@@ -59,7 +167,7 @@ body{
 header{
   display:flex; align-items:center; justify-content:space-between;
   padding:18px 30px; border-bottom:2px dashed var(--line-strong);
-  background:rgba(27,38,32,.85); backdrop-filter:blur(6px);
+  background:var(--header-bg); backdrop-filter:blur(6px);
   position:sticky; top:0; z-index:50;
 }
 .logo{display:flex; align-items:center; gap:14px; cursor:pointer;}
@@ -106,6 +214,70 @@ main{flex:1; padding:0 24px 60px;}
   border:none; cursor:pointer; transition:.2s;
 }
 .install-btn:hover{background:#f5da8c;}
+.icon-toggle-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:38px; height:38px; border-radius:8px;
+  background:transparent; border:2px dashed var(--line-strong); color:var(--chalk-dim);
+  cursor:pointer; font-size:1.05rem; transition:.2s;
+}
+.icon-toggle-btn:hover{border-color:var(--yellow); color:var(--yellow);}
+
+/* SEARCH */
+.search-panel{
+  position:fixed; inset:0; background:rgba(10,14,11,.72); backdrop-filter:blur(3px);
+  z-index:200; display:flex; align-items:flex-start; justify-content:center; padding:8vh 16px;
+}
+.search-box{
+  width:100%; max-width:640px; background:var(--card); border:2px solid var(--line-strong);
+  border-radius:14px; padding:18px; max-height:78vh; display:flex; flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+.search-input-row{display:flex; align-items:center; gap:10px; border-bottom:2px dashed var(--line); padding-bottom:12px;}
+.search-input-row span{font-size:1.2rem; color:var(--muted);}
+.search-input-row input{
+  flex:1; background:none; border:none; outline:none; color:var(--chalk);
+  font-family:'IBM Plex Sans Arabic'; font-size:1.05rem;
+}
+.search-input-row button{background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer;}
+.search-results{overflow-y:auto; margin-top:12px; display:flex; flex-direction:column; gap:8px;}
+.search-hint{color:var(--muted); font-size:.85rem; text-align:center; padding:24px 10px;}
+.search-result-item{
+  display:block; text-align:right; width:100%; background:var(--surface); border:1px solid var(--line);
+  border-radius:9px; padding:11px 14px; cursor:pointer; transition:.15s; font-family:inherit;
+}
+.search-result-item:hover{border-color:var(--yellow); background:var(--card-hover);}
+.search-result-item .sr-meta{font-size:.72rem; color:var(--blue); margin-bottom:4px;}
+.search-result-item .sr-title{font-weight:700; color:var(--chalk); margin-bottom:3px;}
+.search-result-item .sr-snippet{font-size:.8rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+mark{background:var(--yellow); color:#20301c; border-radius:2px; padding:0 1px;}
+
+/* ANALYTICS (ADMIN) */
+.analytics-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media (max-width:900px){ .analytics-grid{ grid-template-columns:1fr; } }
+.analytics-card{
+  background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px;
+}
+.analytics-card h4{ margin:0 0 4px; font-size:1rem; }
+.an-hint{ color:var(--muted); font-size:.78rem; margin:0 0 12px; }
+.an-row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:9px 0; border-bottom:1px dashed var(--line); font-size:.86rem;
+}
+.an-row:last-child{ border-bottom:none; }
+.an-text{ flex:1; color:var(--chalk); }
+.an-count{ color:var(--yellow); font-weight:700; white-space:nowrap; font-size:.8rem; }
+.an-pct-wrap{ flex:1; height:8px; background:var(--surface); border-radius:5px; overflow:hidden; max-width:120px; }
+.an-pct-bar{ display:block; height:100%; background:linear-gradient(90deg, var(--danger), var(--yellow)); }
+.an-empty{ color:var(--muted); font-size:.85rem; text-align:center; padding:16px 0; }
+
+/* COPY BETWEEN GRADES */
+.copy-grade-list{ display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto; }
+.copy-grade-item{
+  display:flex; align-items:center; gap:10px; padding:9px 6px; cursor:pointer;
+  border-radius:8px; font-size:.9rem;
+}
+.copy-grade-item:hover{ background:var(--surface); }
+.copy-grade-item input[type="checkbox"]{ width:16px; height:16px; accent-color:var(--yellow); cursor:pointer; }
 .chalk-eq{
   font-family:'Space Mono',monospace; font-size:clamp(1.4rem,4.6vw,2.4rem);
   color:var(--yellow); margin-bottom:22px; letter-spacing:1px;
@@ -170,6 +342,39 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
 .tab.active{color:#20301c; background:var(--yellow); border-color:var(--yellow);}
 .tab:hover{border-color:var(--yellow); color:var(--yellow);}
 .tab.active:hover{color:#20301c;}
+.tab-ai{ border-style:solid; border-color:var(--blue); color:var(--blue); }
+.tab-ai:hover{ background:var(--blue); color:#0c2226; border-color:var(--blue); }
+
+/* AI TUTOR CHAT */
+.chat-modal{ width:100%; max-width:620px; display:flex; flex-direction:column; height:78vh; max-height:640px; padding:0; overflow:hidden; }
+.chat-header{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:2px dashed var(--line); }
+.chat-body{ flex:1; overflow-y:auto; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+.chat-msg{ max-width:82%; padding:10px 14px; border-radius:12px; line-height:1.7; font-size:.92rem; white-space:pre-wrap; }
+.chat-msg.user{ align-self:flex-start; background:var(--yellow); color:#20301c; border-bottom-left-radius:2px; }
+.chat-msg.ai{ align-self:flex-end; background:var(--surface); border:1px solid var(--line); color:var(--chalk); border-bottom-right-radius:2px; }
+.chat-msg.ai.error{ border-color:var(--danger); color:var(--danger); }
+.chat-typing{ align-self:flex-end; color:var(--muted); font-size:.85rem; display:flex; align-items:center; gap:6px; }
+.chat-input-row{ display:flex; gap:8px; padding:14px 18px; border-top:2px dashed var(--line); }
+.chat-input-row textarea{
+  flex:1; resize:none; background:var(--surface); border:2px solid var(--line); border-radius:10px;
+  padding:10px 12px; color:var(--chalk); font-family:'IBM Plex Sans Arabic'; font-size:.9rem; min-height:44px; max-height:100px;
+}
+.chat-send-btn{
+  background:var(--blue); color:#0c2226; border:none; border-radius:10px; padding:0 18px; font-weight:700;
+  cursor:pointer; font-family:inherit;
+}
+.chat-send-btn:disabled{ opacity:.5; cursor:not-allowed; }
+.chat-hint{ font-size:.72rem; color:var(--muted); text-align:center; padding:0 18px 10px; }
+
+/* AI QUESTION GENERATOR (ADMIN) */
+.gen-result-item{
+  display:flex; gap:10px; align-items:flex-start; background:var(--surface); border:1px solid var(--line);
+  border-radius:9px; padding:12px 14px; margin-bottom:8px;
+}
+.gen-result-item input[type=checkbox]{ margin-top:4px; width:18px; height:18px; flex-shrink:0; }
+.gen-result-item .gr-title{ font-weight:700; margin-bottom:4px; }
+.gen-result-item .gr-content{ font-size:.85rem; color:var(--muted); }
+.gen-result-item .gr-formula{ font-size:.8rem; color:var(--blue); margin-top:4px; direction:ltr; text-align:left; }
 
 .item-list{display:flex; flex-direction:column; gap:14px;}
 .item-card{
@@ -177,6 +382,15 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
   border-radius:8px; padding:20px 22px;
 }
 .item-title{font-family:'Aref Ruqaa',serif; font-size:1.4rem; color:var(--chalk); margin-bottom:8px; font-weight:700;}
+.item-title-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.item-title-row .item-title{ margin-bottom:8px; flex:1; }
+.fav-star{
+  background:none; border:none; cursor:pointer; font-size:1.4rem; line-height:1;
+  color:var(--line-strong); transition:.15s; flex-shrink:0; padding:2px 4px;
+}
+.fav-star:hover{ color:var(--yellow); transform:scale(1.15); }
+.fav-star.active{ color:var(--yellow); }
+.fav-filter-bar{ margin-bottom:14px; }
 .item-body{color:var(--chalk-dim); line-height:1.9; font-size:.98rem; white-space:pre-wrap;}
 .item-formula{
   font-family:'Space Mono',monospace; color:var(--blue); background:#1A2620;
@@ -254,6 +468,11 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
 .empty-state b{display:block; color:var(--chalk); font-family:'Aref Ruqaa',serif; font-size:1.3rem; margin-bottom:6px;}
 
 .hw-actions{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+.self-rate-row{
+  margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.88rem; color:var(--chalk-dim);
+}
+.btn-sm{ padding:6px 14px; font-size:.82rem; }
 .btn{
   padding:10px 20px; border-radius:6px; border:none; cursor:pointer; font-family:'IBM Plex Sans Arabic'; font-weight:600;
   font-size:.88rem; transition:.2s;
@@ -291,6 +510,58 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
 .modal-msg{font-size:.85rem; margin-top:10px; min-height:18px;}
 .modal-msg.err{color:var(--danger);}
 .modal-msg.ok{color:var(--success);}
+.upload-progress{
+  width:100%; height:8px; background:var(--surface); border-radius:5px; overflow:hidden;
+  margin-top:14px; border:1px solid var(--line);
+}
+.upload-progress-bar{
+  height:100%; width:0%; background:linear-gradient(90deg, var(--blue), var(--yellow));
+  transition:width .2s ease;
+}
+
+/* STUDENT BAR */
+.student-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  background:var(--card); border:2px dashed var(--line-strong); border-radius:12px;
+  padding:12px 18px; margin:16px 0;
+}
+.student-bar.guest{ justify-content:space-between; color:var(--chalk-dim); font-size:.9rem; }
+.sb-name{font-weight:700; color:var(--yellow);}
+.sb-stats{display:flex; gap:14px; font-size:.85rem; color:var(--chalk-dim); flex-wrap:wrap;}
+.sb-actions{display:flex; gap:8px;}
+.btn-sm{padding:6px 12px; font-size:.8rem;}
+
+/* PROFILE MODAL */
+.profile-mode-switch{display:flex; gap:8px; margin-bottom:16px;}
+.pm-btn{
+  flex:1; padding:8px; border-radius:8px; border:2px solid var(--line); background:var(--surface);
+  color:var(--chalk-dim); cursor:pointer; font-family:inherit; font-size:.85rem; transition:.15s;
+}
+.pm-btn.active{border-color:var(--yellow); color:var(--yellow); font-weight:700;}
+
+/* BADGES */
+.badges-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px;}
+.badge-chip{
+  text-align:center; padding:14px 8px; border-radius:12px; border:2px solid var(--line);
+  background:var(--surface);
+}
+.badge-chip.earned{border-color:var(--yellow); background:var(--card-hover);}
+.badge-chip.locked{opacity:.4; filter:grayscale(1);}
+.badge-icon{font-size:1.8rem; margin-bottom:6px;}
+.badge-label{font-weight:700; font-size:.85rem; color:var(--chalk);}
+.badge-desc{font-size:.7rem; color:var(--muted); margin-top:3px;}
+
+/* LEADERBOARD */
+.leaderboard{display:flex; flex-direction:column; gap:8px;}
+.lb-row{
+  display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--line);
+  border-radius:10px; padding:10px 16px;
+}
+.lb-row.top{border-color:var(--yellow); background:var(--card-hover);}
+.lb-rank{font-size:1.1rem; font-weight:800; width:36px; text-align:center; color:var(--yellow);}
+.lb-name{flex:1; font-weight:700; color:var(--chalk);}
+.lb-stats{display:flex; gap:12px; font-size:.8rem; color:var(--chalk-dim);}
+.modal-lg{max-width:640px;}
 .modal-close{position:absolute; left:20px; top:18px; background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer;}
 
 /* ADMIN DASHBOARD */
@@ -362,6 +633,27 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
   main{padding:0 14px 40px;}
   .hero{padding:40px 10px 20px;}
 }
+/* PRINT VIEW */
+@media print{
+  body{ background:#fff !important; color:#000 !important; }
+  header, footer, .tabs, .back-link, #studentBarRoot, .no-print,
+  [id^="sc-reveal-"], .self-rate-row,
+  .hero, .grade-view > .gv-sub, .modal-overlay, .search-panel, #toastRoot{
+    display:none !important;
+  }
+  [id^="sc-answer-"]{ display:block !important; }
+  .item-card{
+    background:#fff !important; border:1px solid #999 !important; color:#000 !important;
+    break-inside:avoid; page-break-inside:avoid; margin-bottom:14px;
+  }
+  .item-title{ color:#000 !important; }
+  .item-body{ color:#222 !important; }
+  .item-formula{ background:#eee !important; color:#000 !important; border-color:#999 !important; }
+  .item-video{ display:none !important; }
+  .grade-view{ padding:0 !important; }
+  .gv-title{ color:#000 !important; }
+  a[href]::after{ content:""; }
+}
 </style>
 
 </head>
@@ -383,6 +675,8 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
+      <button class="icon-toggle-btn" onclick="openSearch()" title="بحث">🔍</button>
+      <button class="icon-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="تبديل المظهر">🌙</button>
       <div id="telegramBtnRoot"></div>
       <div id="installBtnRoot"></div>
       <button class="admin-btn" onclick="openAdminGate()">لوحة الإدارة</button>
@@ -414,11 +708,38 @@ const firebaseConfig = {
 const CONFIG_MISSING = firebaseConfig.apiKey.indexOf('REPLACE_WITH') === 0;
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const storage = firebase.storage();
 try{ db.settings({ experimentalForceLongPolling: true, merge: true }); }catch(e){}
+// Cache previously-loaded content locally so students can still open laws,
+// problems, and homework they've already viewed even with no connection.
+try{
+  db.enablePersistence({ synchronizeTabs: true }).catch(err=>{
+    // Fails silently if multiple tabs open (unsupported) or browser doesn't
+    // support IndexedDB — the app still works fine online either way.
+  });
+}catch(e){}
 
 const COL_CONFIG = 'physics_config';
 const COL_GRADES = 'physics_grades';
 const COL_SUBMISSIONS = 'physics_submissions';
+const COL_AI_LOGS = 'physics_ai_logs';
+const COL_SELF_CHECKS = 'physics_self_checks';
+const COL_STUDENTS = 'physics_students';
+
+const POINTS_PER_HOMEWORK = 15;
+const POINTS_DAILY_BASE = 5;
+
+const BADGES = [
+  { id:'first_hw',  icon:'🎯', label:'أول واجب',        desc:'أرسلت أول واجب لك',        check:s=>(s.homeworkCount||0)>=1 },
+  { id:'hw5',       icon:'📚', label:'مجتهد',           desc:'أرسلت 5 واجبات',            check:s=>(s.homeworkCount||0)>=5 },
+  { id:'hw15',      icon:'🏅', label:'نجم الواجبات',     desc:'أرسلت 15 واجباً',           check:s=>(s.homeworkCount||0)>=15 },
+  { id:'streak3',   icon:'🔥', label:'3 أيام متتالية',   desc:'دخلت المنصة 3 أيام متتالية', check:s=>(s.streak||0)>=3 },
+  { id:'streak7',   icon:'🔥', label:'أسبوع كامل',       desc:'دخلت المنصة 7 أيام متتالية', check:s=>(s.streak||0)>=7 },
+  { id:'streak30',  icon:'👑', label:'شهر كامل',         desc:'دخلت المنصة 30 يوماً متتالياً', check:s=>(s.streak||0)>=30 },
+  { id:'points100', icon:'⭐', label:'100 نقطة',         desc:'جمعت 100 نقطة',             check:s=>(s.points||0)>=100 },
+  { id:'points300', icon:'🌟', label:'300 نقطة',         desc:'جمعت 300 نقطة',             check:s=>(s.points||0)>=300 },
+  { id:'points600', icon:'💎', label:'خبير الفيزياء',    desc:'جمعت 600 نقطة',             check:s=>(s.points||0)>=600 },
+];
 
 const GRADES = [
   { id:'g1', name:'الأول متوسط', tag:'M1' },
@@ -431,6 +752,7 @@ const GRADES = [
 const SECTIONS = [
   { id:'laws', label:'قوانين الفيزياء', icon:'⚖', singular:'قانون', empty:'لا توجد قوانين مضافة لهذا الصف بعد.' },
   { id:'problems', label:'أسئلة ومسائل', icon:'✎', singular:'سؤال / مسألة', empty:'لا توجد أسئلة أو مسائل مضافة بعد.' },
+  { id:'exams', label:'أسئلة وزارية', icon:'📜', singular:'سؤال وزاري', empty:'لا توجد أسئلة وزارية مضافة لهذا الصف بعد.' },
   { id:'homework', label:'الواجب البيتي', icon:'📘', singular:'واجب', empty:'لا توجد واجبات مضافة لهذا الصف بعد.' }
 ];
 
@@ -605,6 +927,779 @@ function esc(str){
   if(!str) return '';
   return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function fmtSize(d){
+  let bytes = d && d.fileSize;
+  if(!bytes && d && d.fileData) bytes = (d.fileData||'').length * 0.75;
+  if(!bytes) return '—';
+  if(bytes > 1024*1024) return (bytes/1024/1024).toFixed(1) + ' MB';
+  return (bytes/1024).toFixed(0) + ' KB';
+}
+
+/* ================= THEME TOGGLE ================= */
+function applyTheme(theme){
+  document.body.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggleBtn');
+  if(btn) btn.textContent = theme==='light' ? '☀️' : '🌙';
+  localStorage.setItem('physicsPlatformTheme', theme);
+}
+function toggleTheme(){
+  const current = document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  applyTheme(current==='light' ? 'dark' : 'light');
+}
+(function initTheme(){
+  const saved = localStorage.getItem('physicsPlatformTheme');
+  if(saved) applyTheme(saved);
+  else{
+    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(prefersLight ? 'light' : 'dark');
+  }
+})();
+
+/* ================= STUDENT PROFILE / GAMIFICATION ================= */
+function sanitizeForId(s){
+  return String(s||'').trim().replace(/[\/\.\#\$\[\]]/g,'').replace(/\s+/g,'_').slice(0,60);
+}
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function loadLocalProfile(){
+  try{ return JSON.parse(localStorage.getItem('physicsStudentProfile')||'null'); }catch(e){ return null; }
+}
+function saveLocalProfile(p){ localStorage.setItem('physicsStudentProfile', JSON.stringify(p)); }
+function clearLocalProfile(){ localStorage.removeItem('physicsStudentProfile'); }
+
+function openProfileModal(defaultGradeId){
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3>ملفي الشخصي 🎮</h3>
+      <div class="profile-mode-switch">
+        <button class="pm-btn active" id="pmNewBtn" onclick="setProfileMode('new')">حساب جديد</button>
+        <button class="pm-btn" id="pmLoginBtn" onclick="setProfileMode('login')">لدي حساب</button>
+      </div>
+      <div id="pmNewPane">
+        <div class="field">
+          <label>اسمك الكامل</label>
+          <input type="text" id="pmName" placeholder="أدخل اسمك">
+        </div>
+        <div class="field">
+          <label>الصف</label>
+          <select id="pmGrade">${GRADES.map(g=>`<option value="${g.id}" ${g.id===defaultGradeId?'selected':''}>${g.name}</option>`).join('')}</select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-yellow" onclick="createProfile()">إنشاء حسابي</button>
+        </div>
+      </div>
+      <div id="pmLoginPane" style="display:none;">
+        <div class="field">
+          <label>اسمك (كما أدخلته أول مرة)</label>
+          <input type="text" id="pmLoginName" placeholder="أدخل اسمك">
+        </div>
+        <div class="field">
+          <label>الصف</label>
+          <select id="pmLoginGrade">${GRADES.map(g=>`<option value="${g.id}" ${g.id===defaultGradeId?'selected':''}>${g.name}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>الرمز المكوّن من 4 أرقام</label>
+          <input type="text" id="pmLoginCode" maxlength="4" inputmode="numeric" placeholder="0000">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-yellow" onclick="loginProfile()">تسجيل الدخول</button>
+        </div>
+      </div>
+      <div class="modal-msg" id="pmMsg"></div>
+    </div>
+  </div>`;
+}
+function setProfileMode(mode){
+  document.getElementById('pmNewPane').style.display = mode==='new' ? 'block':'none';
+  document.getElementById('pmLoginPane').style.display = mode==='login' ? 'block':'none';
+  document.getElementById('pmNewBtn').classList.toggle('active', mode==='new');
+  document.getElementById('pmLoginBtn').classList.toggle('active', mode==='login');
+}
+
+function createProfile(){
+  const name = document.getElementById('pmName').value.trim();
+  const gradeId = document.getElementById('pmGrade').value;
+  const msg = document.getElementById('pmMsg');
+  if(!name){ msg.className='modal-msg err'; msg.textContent='الرجاء إدخال اسمك.'; return; }
+  const code = String(Math.floor(1000 + Math.random()*9000));
+  const studentId = gradeId + '__' + code + '__' + sanitizeForId(name);
+  const docRef = db.collection(COL_STUDENTS).doc(studentId);
+  docRef.get().then(snap=>{
+    if(snap.exists){ createProfile(); return; } // extremely unlikely collision, retry
+    const data = {
+      name, gradeId, code,
+      points:0, streak:0, homeworkCount:0,
+      lastActiveDate: todayStr(),
+      badges:[], submittedHomeworkIds:[],
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    docRef.set(data).then(()=>{
+      const profile = { studentId, name, gradeId, code };
+      saveLocalProfile(profile);
+      msg.className='modal-msg ok';
+      msg.innerHTML = 'تم إنشاء حسابك بنجاح ✓ <br>احفظ رمزك: <b style="font-size:1.3rem; letter-spacing:3px;">'+code+'</b> (تحتاجه لو دخلت من جهاز آخر)';
+      setTimeout(()=>{ closeModal(); render(); }, 2400);
+    });
+  });
+}
+
+function loginProfile(){
+  const name = document.getElementById('pmLoginName').value.trim();
+  const gradeId = document.getElementById('pmLoginGrade').value;
+  const code = document.getElementById('pmLoginCode').value.trim();
+  const msg = document.getElementById('pmMsg');
+  if(!name || !/^\d{4}$/.test(code)){ msg.className='modal-msg err'; msg.textContent='أدخل الاسم والرمز المكوّن من 4 أرقام بشكل صحيح.'; return; }
+  const studentId = gradeId + '__' + code + '__' + sanitizeForId(name);
+  db.collection(COL_STUDENTS).doc(studentId).get().then(snap=>{
+    if(!snap.exists){ msg.className='modal-msg err'; msg.textContent='لم يتم العثور على حساب مطابق. تأكد من الاسم والصف والرمز.'; return; }
+    const profile = { studentId, name, gradeId, code };
+    saveLocalProfile(profile);
+    msg.className='modal-msg ok'; msg.textContent='تم تسجيل الدخول ✓';
+    setTimeout(()=>{ closeModal(); render(); }, 900);
+  });
+}
+
+function logoutProfile(){
+  if(!confirm('هل تريد تسجيل الخروج من هذا الجهاز؟ (حسابك ونقاطك تبقى محفوظة ويمكنك الدخول لاحقاً بالاسم والرمز)')) return;
+  clearLocalProfile();
+  render();
+}
+
+function ensureDailyVisit(){
+  const profile = loadLocalProfile();
+  if(!profile) return;
+  const ref = db.collection(COL_STUDENTS).doc(profile.studentId);
+  ref.get().then(snap=>{
+    if(!snap.exists) return;
+    const s = snap.data();
+    const today = todayStr();
+    if(s.lastActiveDate === today) return; // already counted today
+    const y = new Date(); y.setDate(y.getDate()-1);
+    const yesterday = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+    const newStreak = (s.lastActiveDate === yesterday) ? (s.streak||0)+1 : 1;
+    const bonus = newStreak>=7 ? 12 : (newStreak>=3 ? 8 : POINTS_DAILY_BASE);
+    const updated = Object.assign({}, s, { streak:newStreak, lastActiveDate:today, points:(s.points||0)+bonus });
+    ref.update({ streak:newStreak, lastActiveDate:today, points:firebase.firestore.FieldValue.increment(bonus) })
+      .then(()=>{ checkAndAwardBadges(profile.studentId, updated); toast('🔥 يوم جديد! +'+bonus+' نقطة (متتالية: '+newStreak+' يوم)','ok'); });
+  }).catch(()=>{});
+}
+
+function checkAndAwardBadges(studentId, studentData){
+  const have = new Set(studentData.badges||[]);
+  const newlyEarned = BADGES.filter(b=>!have.has(b.id) && b.check(studentData));
+  if(!newlyEarned.length) return;
+  const allIds = (studentData.badges||[]).concat(newlyEarned.map(b=>b.id));
+  db.collection(COL_STUDENTS).doc(studentId).update({ badges: allIds }).then(()=>{
+    newlyEarned.forEach((b,i)=>{
+      setTimeout(()=>toast('🎉 شارة جديدة: '+b.icon+' '+b.label, 'ok'), i*1600);
+    });
+  });
+}
+
+function awardHomeworkPoints(homeworkId){
+  const profile = loadLocalProfile();
+  if(!profile) return;
+  const ref = db.collection(COL_STUDENTS).doc(profile.studentId);
+  ref.get().then(snap=>{
+    if(!snap.exists) return;
+    const s = snap.data();
+    const done = new Set(s.submittedHomeworkIds||[]);
+    if(done.has(homeworkId)) return; // already rewarded for this specific homework
+    const updatedIds = (s.submittedHomeworkIds||[]).concat([homeworkId]);
+    const updated = Object.assign({}, s, {
+      points:(s.points||0)+POINTS_PER_HOMEWORK,
+      homeworkCount:(s.homeworkCount||0)+1,
+      submittedHomeworkIds: updatedIds
+    });
+    ref.update({
+      points: firebase.firestore.FieldValue.increment(POINTS_PER_HOMEWORK),
+      homeworkCount: firebase.firestore.FieldValue.increment(1),
+      submittedHomeworkIds: firebase.firestore.FieldValue.arrayUnion(homeworkId)
+    }).then(()=>{
+      toast('+' + POINTS_PER_HOMEWORK + ' نقطة على إرسال الواجب 🎉','ok');
+      checkAndAwardBadges(profile.studentId, updated);
+    });
+  });
+}
+
+function renderStudentBar(){
+  const profile = loadLocalProfile();
+  const root = document.getElementById('studentBarRoot');
+  if(!root) return;
+  if(!profile){
+    root.innerHTML = `
+    <div class="student-bar guest">
+      <span>🎮 أنشئ ملفك الشخصي لتتبع نقاطك، متتاليتك اليومية، وشاراتك!</span>
+      <button class="btn btn-yellow btn-sm" onclick="openProfileModal('${state.gradeId||''}')">إنشاء / تسجيل دخول</button>
+    </div>`;
+    return;
+  }
+  db.collection(COL_STUDENTS).doc(profile.studentId).get().then(snap=>{
+    if(!snap.exists){ clearLocalProfile(); renderStudentBar(); return; }
+    const s = snap.data();
+    root.innerHTML = `
+    <div class="student-bar">
+      <div class="sb-name">👤 ${esc(s.name)}</div>
+      <div class="sb-stats">
+        <span>⭐ ${s.points||0} نقطة</span>
+        <span>🔥 ${s.streak||0} يوم متتالي</span>
+        <span>🏅 ${(s.badges||[]).length} شارة</span>
+      </div>
+      <div class="sb-actions">
+        <button class="btn btn-outline btn-sm" onclick="shareReportWhatsApp()">📤 شارك مع أهلي</button>
+        <button class="btn btn-outline btn-sm" onclick="openBadgesModal()">شاراتي</button>
+        <button class="btn btn-outline btn-sm" onclick="logoutProfile()">خروج</button>
+      </div>
+    </div>`;
+  });
+}
+
+function shareReportWhatsApp(){
+  const profile = loadLocalProfile();
+  if(!profile) return;
+  db.collection(COL_STUDENTS).doc(profile.studentId).get().then(snap=>{
+    if(!snap.exists) return;
+    const s = snap.data();
+    const g = gradeById(s.gradeId);
+    const haveIds = new Set(s.badges||[]);
+    const earned = BADGES.filter(b=>haveIds.has(b.id));
+    const lines = [
+      '📊 تقرير تقدّم الطالب — منصّة الفيزياء',
+      '',
+      '👤 الاسم: ' + s.name,
+      '🏫 الصف: ' + (g ? g.name : ''),
+      '⭐ مجموع النقاط: ' + (s.points||0),
+      '🔥 أيام المتابعة المتتالية: ' + (s.streak||0),
+      '📘 عدد الواجبات المُرسلة: ' + (s.homeworkCount||0),
+      '🏅 عدد الشارات المكتسبة: ' + earned.length + (earned.length ? (' (' + earned.map(b=>b.label).join('، ') + ')') : ''),
+      '',
+      'تم إنشاء هذا التقرير تلقائياً من منصّة الفيزياء — الأستاذ علي محسن.'
+    ];
+    const text = encodeURIComponent(lines.join('\n'));
+    if(navigator.share){
+      navigator.share({ title:'تقرير تقدّم الطالب', text: lines.join('\n') }).catch(()=>{
+        window.open('https://wa.me/?text=' + text, '_blank');
+      });
+    } else {
+      window.open('https://wa.me/?text=' + text, '_blank');
+    }
+  });
+}
+
+function openBadgesModal(){
+  const profile = loadLocalProfile();
+  if(!profile) return;
+  db.collection(COL_STUDENTS).doc(profile.studentId).get().then(snap=>{
+    const s = snap.data() || {};
+    const have = new Set(s.badges||[]);
+    document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h3>شاراتي 🏅</h3>
+        <p style="color:var(--muted); font-size:.85rem; margin-bottom:14px;">⭐ ${s.points||0} نقطة · 🔥 ${s.streak||0} يوم متتالي</p>
+        <div class="badges-grid">
+          ${BADGES.map(b=>`
+            <div class="badge-chip ${have.has(b.id)?'earned':'locked'}">
+              <div class="badge-icon">${b.icon}</div>
+              <div class="badge-label">${b.label}</div>
+              <div class="badge-desc">${b.desc}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  });
+}
+
+/* ================= LEADERBOARD ================= */
+function loadLeaderboardTab(gradeId){
+  const list = document.getElementById('itemList');
+  list.innerHTML = `<div class="loading"><div class="spin"></div>جارِ تحميل لوحة الصدارة...</div>`;
+  // Fetch sorted by points only (single-field index, always available by default)
+  // then filter by grade on the client — avoids needing a manual composite
+  // index for where(gradeId) + orderBy(points) together.
+  db.collection(COL_STUDENTS).orderBy('points','desc').limit(500).get()
+  .then(snap=>{
+    const rows = [];
+    snap.forEach(doc=>{ const d = doc.data(); if(d.gradeId===gradeId) rows.push(d); });
+    renderLeaderboardRows(list, rows.slice(0,20), 'لا يوجد طلاب مسجّلون بهذا الصف بعد.');
+  }).catch(err=>{
+    list.innerHTML = `<div class="empty-state"><h3>تعذّر التحميل</h3><p>${esc(err.message)}</p></div>`;
+  });
+}
+function renderLeaderboardRows(container, rows, emptyMsg){
+  if(!rows.length){ container.innerHTML = `<div class="empty-state"><h3>لا توجد بيانات</h3><p>${emptyMsg}</p></div>`; return; }
+  const medals = ['🥇','🥈','🥉'];
+  container.innerHTML = `<div class="leaderboard">` + rows.map((s,i)=>`
+    <div class="lb-row ${i<3?'top':''}">
+      <div class="lb-rank">${medals[i]||('#'+(i+1))}</div>
+      <div class="lb-name">${esc(s.name)}</div>
+      <div class="lb-stats">
+        <span>⭐ ${s.points||0}</span>
+        <span>🔥 ${s.streak||0}</span>
+        <span>🏅 ${(s.badges||[]).length}</span>
+      </div>
+    </div>`).join('') + `</div>`;
+}
+function openGlobalLeaderboard(){
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal modal-lg">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3>🏆 لوحة الصدارة العامة (كل الصفوف)</h3>
+      <div id="globalLbList" class="item-list" style="margin-top:14px;">
+        <div class="loading"><div class="spin"></div>جارِ التحميل...</div>
+      </div>
+    </div>
+  </div>`;
+  db.collection(COL_STUDENTS).orderBy('points','desc').limit(30).get().then(snap=>{
+    const rows = [];
+    snap.forEach(doc=>rows.push(doc.data()));
+    const gnames = {}; GRADES.forEach(g=>gnames[g.id]=g.name);
+    const list = document.getElementById('globalLbList');
+    if(!rows.length){ list.innerHTML = `<div class="empty-state"><h3>لا توجد بيانات</h3><p>لا يوجد طلاب مسجّلون بعد.</p></div>`; return; }
+    const medals = ['🥇','🥈','🥉'];
+    list.innerHTML = `<div class="leaderboard">` + rows.map((s,i)=>`
+      <div class="lb-row ${i<3?'top':''}">
+        <div class="lb-rank">${medals[i]||('#'+(i+1))}</div>
+        <div class="lb-name">${esc(s.name)} <span style="color:var(--muted); font-size:.75rem;">(${gnames[s.gradeId]||''})</span></div>
+        <div class="lb-stats">
+          <span>⭐ ${s.points||0}</span>
+          <span>🔥 ${s.streak||0}</span>
+          <span>🏅 ${(s.badges||[]).length}</span>
+        </div>
+      </div>`).join('') + `</div>`;
+  }).catch(err=>{
+    document.getElementById('globalLbList').innerHTML = `<div class="empty-state"><h3>تعذّر التحميل</h3><p>${esc(err.message)}</p></div>`;
+  });
+}
+
+/* ================= SMART SEARCH ================= */
+let _searchIndex = null;
+let _searchIndexLoading = null;
+let _searchDebounce = null;
+
+function openSearch(){
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="search-panel" onclick="if(event.target===this) closeSearch()">
+    <div class="search-box">
+      <div class="search-input-row">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="ابحث عن قانون، سؤال، مسألة، أو واجب..." autocomplete="off" oninput="onSearchInput()">
+        <button onclick="closeSearch()">✕</button>
+      </div>
+      <div class="search-results" id="searchResults">
+        <div class="search-hint">اكتب حرفين على الأقل للبحث في كل الصفوف والمواد.</div>
+      </div>
+    </div>
+  </div>`;
+  setTimeout(()=>{ const inp = document.getElementById('searchInput'); if(inp) inp.focus(); }, 50);
+}
+function closeSearch(){ document.getElementById('modalRoot').innerHTML=''; }
+
+function onSearchInput(){
+  clearTimeout(_searchDebounce);
+  const q = document.getElementById('searchInput').value.trim();
+  if(q.length < 2){
+    document.getElementById('searchResults').innerHTML = `<div class="search-hint">اكتب حرفين على الأقل للبحث في كل الصفوف والمواد.</div>`;
+    return;
+  }
+  _searchDebounce = setTimeout(()=>runSearch(q), 280);
+}
+
+function loadSearchIndex(){
+  if(_searchIndex) return Promise.resolve(_searchIndex);
+  if(_searchIndexLoading) return _searchIndexLoading;
+  const results = document.getElementById('searchResults');
+  if(results) results.innerHTML = `<div class="loading"><div class="spin"></div>جارِ تجهيز فهرس البحث (أول مرة فقط)...</div>`;
+  const sectionsToIndex = ['laws','problems','exams','homework'];
+  _searchIndexLoading = Promise.all(sectionsToIndex.map(sec=>
+    db.collectionGroup(sec).get().then(snap=>{
+      const items = [];
+      snap.forEach(doc=>{
+        const parent = doc.ref.parent; // e.g. .../physics_grades/g1/laws
+        const gradeRef = parent.parent; // .../physics_grades/g1
+        if(!gradeRef || gradeRef.parent.id !== COL_GRADES) return;
+        const d = doc.data();
+        items.push({
+          gradeId: gradeRef.id, section: sec, id: doc.id,
+          title: d.title||'', content: d.content||'', formula: d.formula||''
+        });
+      });
+      return items;
+    }).catch(()=>[])
+  )).then(arrays=>{
+    _searchIndex = [].concat(...arrays);
+    return _searchIndex;
+  });
+  return _searchIndexLoading;
+}
+
+function highlightMatch(text, q){
+  if(!text) return '';
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if(idx===-1) return esc(text.slice(0,90));
+  const start = Math.max(0, idx-30);
+  const snippet = (start>0?'…':'') + text.slice(start, idx) + '[[MARK]]' + text.slice(idx, idx+q.length) + '[[/MARK]]' + text.slice(idx+q.length, idx+q.length+50);
+  return esc(snippet).replace('[[MARK]]','<mark>').replace('[[/MARK]]','</mark>');
+}
+
+function runSearch(q){
+  loadSearchIndex().then(index=>{
+    const ql = q.toLowerCase();
+    const matches = index.filter(item=>
+      item.title.toLowerCase().includes(ql) ||
+      item.content.toLowerCase().includes(ql) ||
+      item.formula.toLowerCase().includes(ql)
+    ).slice(0, 30);
+    const results = document.getElementById('searchResults');
+    if(!results) return;
+    if(!matches.length){
+      results.innerHTML = `<div class="search-hint">لا توجد نتائج مطابقة لـ «${esc(q)}».</div>`;
+      return;
+    }
+    const secMeta = { laws:{icon:'⚖',label:'قانون'}, problems:{icon:'✎',label:'سؤال/مسألة'}, exams:{icon:'📜',label:'سؤال وزاري'}, homework:{icon:'📘',label:'واجب'} };
+    results.innerHTML = matches.map((m,i)=>{
+      const g = gradeById(m.gradeId);
+      const meta = secMeta[m.section] || {icon:'📄',label:m.section};
+      const snippetSrc = m.title.toLowerCase().includes(ql) ? m.content : (m.content.toLowerCase().includes(ql) ? m.content : m.formula);
+      return `<button class="search-result-item" onclick="goToSearchResult(${i})">
+        <div class="sr-meta">${meta.icon} ${meta.label} · ${g?esc(g.name):''}</div>
+        <div class="sr-title">${highlightMatch(m.title, q)}</div>
+        ${snippetSrc ? `<div class="sr-snippet">${highlightMatch(snippetSrc, q)}</div>` : ''}
+      </button>`;
+    }).join('');
+    window._searchMatches = matches;
+  });
+}
+
+function goToSearchResult(i){
+  const m = window._searchMatches[i];
+  if(!m) return;
+  closeSearch();
+  state.view = 'grade';
+  state.gradeId = m.gradeId;
+  state.tab = m.section;
+  render();
+}
+
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey||e.metaKey) && e.key==='k'){ e.preventDefault(); openSearch(); }
+  if(e.key==='Escape'){ const sp=document.querySelector('.search-panel'); if(sp) closeSearch(); }
+});
+
+/* ================= AI TUTOR (STUDENT) ================= */
+window._chatHistory = [];
+
+function openAiTutorModal(){
+  window._chatHistory = [];
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal chat-modal">
+      <div class="chat-header">
+        <h3 style="margin:0;">🤖 المساعد الذكي</h3>
+        <button class="modal-close" style="position:static;" onclick="closeModal()">✕</button>
+      </div>
+      <div class="chat-body" id="chatBody">
+        <div class="chat-msg ai">أهلاً! أنا مساعدك بمادة الفيزياء 🤖<br>اكتب سؤالك أو المسألة اللي تبي تفهمها، وراح أشرحلك الحل خطوة بخطوة (مو بس أعطيك الجواب مباشرة، حتى تتعلم الطريقة صح).</div>
+      </div>
+      <div class="chat-input-row">
+        <textarea id="chatInput" placeholder="اكتب سؤالك هنا... (Enter للإرسال)" onkeydown="handleChatKeydown(event)"></textarea>
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendTutorMessage()">إرسال</button>
+      </div>
+      <div class="chat-hint">مساعد تعليمي بالذكاء الاصطناعي — راجع إجاباته دائماً مع أستاذك.</div>
+    </div>
+  </div>`;
+  setTimeout(()=>{ const el = document.getElementById('chatInput'); if(el) el.focus(); }, 50);
+}
+
+function handleChatKeydown(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendTutorMessage(); }
+}
+
+function renderChatBody(){
+  const body = document.getElementById('chatBody');
+  if(!body) return;
+  body.innerHTML = window._chatHistory.map(h=>
+    `<div class="chat-msg ${h.role==='user'?'user':'ai'}${h.error?' error':''}">${esc(h.text)}</div>`
+  ).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+// Fire-and-forget log of student questions to the AI tutor, used later to
+// surface the platform's most common points of confusion to the teacher
+// (see analytics tab). Never blocks or fails the chat flow.
+function logAIQuestion(gradeId, question){
+  try{
+    db.collection(COL_AI_LOGS).add({
+      gradeId: gradeId || null,
+      question: question.slice(0, 500),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+function sendTutorMessage(){
+  const input = document.getElementById('chatInput');
+  const btn = document.getElementById('chatSendBtn');
+  const text = input.value.trim();
+  if(!text) return;
+  window._chatHistory.push({ role:'user', text });
+  input.value = '';
+  btn.disabled = true;
+  renderChatBody();
+  logAIQuestion(state.gradeId, text);
+  const body = document.getElementById('chatBody');
+  body.insertAdjacentHTML('beforeend', `<div class="chat-typing" id="typingIndicator"><div class="spin" style="width:14px;height:14px;"></div>يفكر...</div>`);
+  body.scrollTop = body.scrollHeight;
+
+  const historyForApi = window._chatHistory.slice(0,-1).map(h=>({ role: h.role==='user'?'user':'model', text: h.text }));
+
+  window.askPhysicsAI(text, historyForApi).then(reply=>{
+    window._chatHistory.push({ role:'model', text: reply });
+    btn.disabled = false;
+    renderChatBody();
+  }).catch(err=>{
+    let msg = 'تعذّر الوصول للمساعد الذكي حالياً. حاول مرة ثانية بعد قليل.';
+    if(err && err.message && err.message.indexOf('429') !== -1){
+      msg = 'الخدمة مزدحمة حالياً (تجاوزنا الحد المجاني اليومي مؤقتاً). حاول بعد شوي.';
+    }
+    window._chatHistory.push({ role:'model', text: msg, error:true });
+    btn.disabled = false;
+    renderChatBody();
+  });
+}
+
+/* ================= ANALYTICS (ADMIN) ================= */
+function loadAnalyticsTab(){
+  const list = document.getElementById('adminList');
+  list.innerHTML = `<div class="loading"><div class="spin"></div>جارِ تحميل التحليلات...</div>`;
+  const gradeId = state.adminGrade;
+
+  const pAiLogs = db.collection(COL_AI_LOGS).orderBy('createdAt','desc').limit(500).get()
+    .then(snap=>{ const rows=[]; snap.forEach(doc=>{ const d=doc.data(); if(d.gradeId===gradeId) rows.push(d); }); return rows; })
+    .catch(()=>[]);
+
+  const pSelfChecks = db.collection(COL_SELF_CHECKS).orderBy('createdAt','desc').limit(1000).get()
+    .then(snap=>{ const rows=[]; snap.forEach(doc=>{ const d=doc.data(); if(d.gradeId===gradeId) rows.push(d); }); return rows; })
+    .catch(()=>[]);
+
+  const pHomework = db.collection(COL_GRADES).doc(gradeId).collection('homework').get()
+    .then(snap=>{ const rows=[]; snap.forEach(doc=>rows.push({id:doc.id, ...doc.data()})); return rows; })
+    .catch(()=>[]);
+
+  const pSubs = db.collection(COL_SUBMISSIONS).orderBy('submittedAt','desc').limit(1000).get()
+    .then(snap=>{ const rows=[]; snap.forEach(doc=>{ const d=doc.data(); if(d.gradeId===gradeId) rows.push(d); }); return rows; })
+    .catch(()=>[]);
+
+  const pStudents = db.collection(COL_STUDENTS).where('gradeId','==',gradeId).get()
+    .then(snap=>{ const rows=[]; snap.forEach(doc=>rows.push(doc.data())); return rows; })
+    .catch(()=>[]);
+
+  Promise.all([pAiLogs, pHomework, pSubs, pStudents, pSelfChecks]).then(([aiLogs, homework, subs, students, selfChecks])=>{
+    renderAnalyticsTab(list, aiLogs, homework, subs, students, selfChecks);
+  });
+}
+
+function renderAnalyticsTab(list, aiLogs, homework, subs, students, selfChecks){
+  // 1) Most common AI-tutor questions this grade's students are asking —
+  // the clearest real signal of where students are actually struggling,
+  // straight from their own words.
+  const norm = s => (s||'').trim().replace(/\s+/g,' ').toLowerCase();
+  const counts = {};
+  aiLogs.forEach(l=>{ const k = norm(l.question); if(!k) return; counts[k] = counts[k] || { text: l.question.trim(), count:0 }; counts[k].count++; });
+  const topQuestions = Object.values(counts).sort((a,b)=>b.count-a.count).slice(0,10);
+  const recentQuestions = aiLogs.slice(0,15);
+
+  // 2) Homework participation: submissions per homework vs total registered students
+  const totalStudents = students.length;
+  const subsByHw = {};
+  subs.forEach(s=>{ subsByHw[s.homeworkId] = (subsByHw[s.homeworkId]||0) + 1; });
+  const hwStats = homework.map(h=>({
+    title: h.title || 'بدون عنوان',
+    count: subsByHw[h.id] || 0,
+    pct: totalStudents ? Math.round(((subsByHw[h.id]||0) / totalStudents) * 100) : 0
+  })).sort((a,b)=>a.pct-b.pct);
+
+  // 3) Students who may need attention: registered but with low points or a
+  // broken streak (haven't engaged recently).
+  const needsAttention = students.slice().sort((a,b)=>(a.points||0)-(b.points||0)).slice(0,10);
+
+  // 4) Hardest questions: from self-check ratings students submit themselves
+  // after trying to solve on their own — a direct, honest difficulty signal
+  // (needs at least 2 responses per question to avoid noise from one click).
+  const scStats = {};
+  selfChecks.forEach(c=>{
+    const k = c.itemId;
+    scStats[k] = scStats[k] || { title: c.itemTitle, total:0, wrong:0 };
+    scStats[k].total++;
+    if(!c.correct) scStats[k].wrong++;
+  });
+  const hardestQuestions = Object.values(scStats)
+    .filter(q=>q.total>=2)
+    .map(q=>({ ...q, pct: Math.round((q.wrong/q.total)*100) }))
+    .sort((a,b)=>b.pct-a.pct)
+    .slice(0,10);
+
+  list.innerHTML = `
+  <div class="analytics-grid">
+    <div class="analytics-card">
+      <h4>🔥 أكثر الأسئلة تكراراً بالمساعد الذكي</h4>
+      <p class="an-hint">أفضل مؤشر حقيقي على نقاط الضعف — بكلام الطلاب أنفسهم.</p>
+      ${topQuestions.length ? topQuestions.map(q=>`
+        <div class="an-row">
+          <span class="an-count">${q.count}×</span>
+          <span class="an-text">${esc(q.text)}</span>
+        </div>`).join('') : '<div class="an-empty">لا توجد أسئلة مسجّلة بعد لهذا الصف.</div>'}
+    </div>
+
+    <div class="analytics-card">
+      <h4>📉 أصعب الأسئلة (حسب تقييم الطلاب لأنفسهم)</h4>
+      <p class="an-hint">أعلى نسبة "لا" من وضع "اختبر نفسك" بقسم الأسئلة.</p>
+      ${hardestQuestions.length ? hardestQuestions.map(q=>`
+        <div class="an-row">
+          <span class="an-text">${esc(q.title)}</span>
+          <span class="an-pct-wrap"><span class="an-pct-bar" style="width:${q.pct}%"></span></span>
+          <span class="an-count">${q.pct}% (${q.wrong}/${q.total})</span>
+        </div>`).join('') : '<div class="an-empty">لا توجد بيانات كافية بعد — الطلاب لم يستخدموا "اختبر نفسك" كفاية.</div>'}
+    </div>
+
+    <div class="analytics-card">
+      <h4>📥 نسبة تسليم الواجبات</h4>
+      <p class="an-hint">${totalStudents} طالب مسجّل بملفات شخصية بهذا الصف.</p>
+      ${hwStats.length ? hwStats.map(h=>`
+        <div class="an-row">
+          <span class="an-text">${esc(h.title)}</span>
+          <span class="an-pct-wrap"><span class="an-pct-bar" style="width:${h.pct}%"></span></span>
+          <span class="an-count">${h.count}/${totalStudents||0}</span>
+        </div>`).join('') : '<div class="an-empty">لا توجد واجبات مضافة لهذا الصف بعد.</div>'}
+    </div>
+
+    <div class="analytics-card">
+      <h4>⚠ طلاب بحاجة لمتابعة</h4>
+      <p class="an-hint">أقل الطلاب نقاطاً ضمن اللي أنشأوا ملفاً شخصياً.</p>
+      ${needsAttention.length ? needsAttention.map(s=>`
+        <div class="an-row">
+          <span class="an-text">${esc(s.name)}</span>
+          <span class="an-count">⭐ ${s.points||0} · 🔥 ${s.streak||0}</span>
+        </div>`).join('') : '<div class="an-empty">لا يوجد طلاب مسجّلون بهذا الصف بعد.</div>'}
+    </div>
+
+    <div class="analytics-card">
+      <h4>💬 آخر الأسئلة المطروحة</h4>
+      ${recentQuestions.length ? recentQuestions.map(q=>`
+        <div class="an-row"><span class="an-text">${esc(q.question)}</span></div>
+      `).join('') : '<div class="an-empty">لا توجد أسئلة مسجّلة بعد.</div>'}
+    </div>
+  </div>`;
+}
+
+
+function openGenerateQuestionsModal(){
+  const meta = SECTIONS.find(s=>s.id===state.adminSection);
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal" style="max-width:600px;">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3>🤖 توليد ${meta ? meta.singular : 'عناصر'} بالذكاء الاصطناعي</h3>
+      <div class="field">
+        <label>الموضوع / الدرس</label>
+        <input type="text" id="genTopic" placeholder="مثال: قوانين نيوتن للحركة">
+      </div>
+      <div class="field">
+        <label>مستوى الصعوبة</label>
+        <select id="genDifficulty">
+          <option value="سهل">سهل</option>
+          <option value="متوسط" selected>متوسط</option>
+          <option value="صعب">صعب</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>عدد الأسئلة</label>
+        <select id="genCount">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-yellow" id="genRunBtn" onclick="runGenerateQuestions()">توليد</button>
+        <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+      </div>
+      <div class="modal-msg" id="genMsg"></div>
+      <div id="genResults"></div>
+    </div>
+  </div>`;
+}
+
+function runGenerateQuestions(){
+  const topic = document.getElementById('genTopic').value.trim();
+  const difficulty = document.getElementById('genDifficulty').value;
+  const count = document.getElementById('genCount').value;
+  const msg = document.getElementById('genMsg');
+  const btn = document.getElementById('genRunBtn');
+  const results = document.getElementById('genResults');
+  if(!topic){ msg.className='modal-msg err'; msg.textContent='الرجاء إدخال الموضوع.'; return; }
+  msg.className='modal-msg'; msg.textContent='';
+  btn.disabled = true; btn.textContent = 'جارِ التوليد...';
+  results.innerHTML = `<div class="loading"><div class="spin"></div>جارِ توليد الأسئلة...</div>`;
+
+  window.generatePhysicsQuestions(topic, difficulty, count).then(items=>{
+    btn.disabled = false; btn.textContent = 'توليد';
+    if(!Array.isArray(items) || !items.length){
+      results.innerHTML = '';
+      msg.className='modal-msg err'; msg.textContent='لم يتم توليد أي أسئلة. جرّب موضوعاً أوضح.';
+      return;
+    }
+    window._genResults = items;
+    results.innerHTML = `
+      <div style="margin:14px 0 8px; font-size:.85rem; color:var(--muted);">اختر الأسئلة اللي تريد إضافتها للمنصة:</div>
+      ${items.map((it,i)=>`
+        <label class="gen-result-item">
+          <input type="checkbox" checked data-gi="${i}">
+          <div>
+            <div class="gr-title">${esc(it.title||'بدون عنوان')}</div>
+            <div class="gr-content">${esc(it.content||'')}</div>
+            ${it.formula ? `<div class="gr-formula">${esc(it.formula)}</div>` : ''}
+          </div>
+        </label>
+      `).join('')}
+      <div class="modal-actions">
+        <button class="btn btn-yellow" onclick="saveSelectedGenerated()">➕ إضافة المحدد للمنصة</button>
+      </div>
+    `;
+  }).catch(err=>{
+    btn.disabled = false; btn.textContent = 'توليد';
+    results.innerHTML = '';
+    msg.className='modal-msg err';
+    msg.textContent = (err && err.message && err.message.indexOf('429')!==-1)
+      ? 'تجاوزنا الحد المجاني اليومي مؤقتاً، حاول بعد قليل.'
+      : 'فشل التوليد: ' + (err.message||'خطأ غير معروف');
+  });
+}
+
+function saveSelectedGenerated(){
+  const checks = document.querySelectorAll('#genResults input[type=checkbox]:checked');
+  if(!checks.length){ toast('لم تختر أي سؤال','err'); return; }
+  const col = db.collection(COL_GRADES).doc(state.adminGrade).collection(state.adminSection);
+  const batch = Array.from(checks).map(chk=>{
+    const it = window._genResults[parseInt(chk.dataset.gi,10)];
+    return col.doc().set({
+      title: it.title||'', content: it.content||'', formula: it.formula||'', videoUrl:'',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      generatedByAI: true
+    });
+  });
+  Promise.all(batch).then(()=>{
+    toast('تمت إضافة ' + batch.length + ' عنصر بنجاح','ok');
+    closeModal();
+    loadAdminList();
+  }).catch(err=>toast('فشل الحفظ: '+err.message,'err'));
+}
 
 /* ================= ROUTER ================= */
 function goHome(){ state.view='home'; state.gradeId=null; render(); }
@@ -629,6 +1724,7 @@ function renderHome(){
     <div class="chalk-eq">${chalkEq('F = m·a')} &nbsp;&nbsp; ${chalkEq('E = mc²')}</div>
     <h1 class="hero-title">منصّة الفيزياء</h1>
     <p class="hero-sub">قوانين، أسئلة، مسائل، وواجبات بيتية لكل مرحلة دراسية — اختر صفّك للبدء</p>
+    <button class="btn btn-outline" style="margin-top:14px;" onclick="openGlobalLeaderboard()">🏆 لوحة الصدارة العامة</button>
   </div>
   <div class="grades">
     ${GRADES.map(g=>`
@@ -648,19 +1744,26 @@ function renderGradeView(root){
       <button class="back-link" onclick="goHome()">→ رجوع إلى الصفوف</button>
       <div class="gv-title">${g.name}</div>
       <div class="gv-sub">مادة الفيزياء</div>
+      <div id="studentBarRoot"></div>
       <div class="tabs">
         ${SECTIONS.map(s=>`<button class="tab ${state.tab===s.id?'active':''}" onclick="switchTab('${s.id}')">${s.icon} ${s.label}</button>`).join('')}
         <button class="tab ${state.tab==='activities'?'active':''}" onclick="switchTab('activities')">🧪 أنشطة تفاعلية</button>
         <button class="tab ${state.tab==='book'?'active':''}" onclick="switchTab('book')">📖 كتاب المادة</button>
+        <button class="tab ${state.tab==='leaderboard'?'active':''}" onclick="switchTab('leaderboard')">🏆 الصدارة</button>
+        <button class="tab tab-ai" onclick="openAiTutorModal()">🤖 مساعد ذكي</button>
       </div>
       <div id="itemList" class="item-list"><div class="loading"><div class="spin"></div>جارِ التحميل...</div></div>
+      ${SECTIONS.some(s=>s.id===state.tab) ? `<button class="btn btn-outline no-print" style="margin-top:16px;" onclick="window.print()">🖨 طباعة هذا القسم</button>` : ''}
     </div>`;
+  renderStudentBar();
+  ensureDailyVisit();
   if(state.tab==='activities') loadActivitiesTab(state.gradeId);
   else if(state.tab==='book') loadBookTab(state.gradeId);
+  else if(state.tab==='leaderboard') loadLeaderboardTab(state.gradeId);
   else loadItems(state.gradeId, state.tab);
 }
 
-function switchTab(tab){ state.tab=tab; render(); }
+function switchTab(tab){ state.tab=tab; state.favoritesOnly=false; render(); }
 
 function toEmbedUrl(url){
   try{
@@ -676,26 +1779,89 @@ function toEmbedUrl(url){
   }catch(e){ return url; }
 }
 
+/* ================= FAVORITES (bookmark items for quick review) ================= */
+function getFavorites(){
+  try{ return JSON.parse(localStorage.getItem('physicsFavorites')||'{}'); }catch(e){ return {}; }
+}
+function isFavorite(itemId){ return !!getFavorites()[itemId]; }
+function toggleFavorite(itemId){
+  const favs = getFavorites();
+  if(favs[itemId]) delete favs[itemId];
+  else favs[itemId] = true;
+  localStorage.setItem('physicsFavorites', JSON.stringify(favs));
+  // Re-render so the "favorites only" filter and its counter (scoped to the
+  // items actually shown in this section) both stay correct — computing the
+  // counter from localStorage alone would wrongly include other sections.
+  loadItems(state.gradeId, state.tab);
+}
+function toggleFavoritesFilter(){
+  state.favoritesOnly = !state.favoritesOnly;
+  loadItems(state.gradeId, state.tab);
+}
+
 function loadItems(gradeId, section){
   db.collection(COL_GRADES).doc(gradeId).collection(section).orderBy('createdAt','asc').get()
   .then(snap=>{
     const list = document.getElementById('itemList');
     if(!list) return;
-    if(snap.empty){
+    const favs = getFavorites();
+    let docs = [];
+    snap.forEach(doc=>docs.push(doc));
+    const favCount = docs.filter(doc=>favs[doc.id]).length;
+    if(state.favoritesOnly) docs = docs.filter(doc=>favs[doc.id]);
+
+    const filterBar = `<div class="fav-filter-bar no-print">
+      <button class="btn btn-sm ${state.favoritesOnly?'btn-yellow':'btn-outline'}" onclick="toggleFavoritesFilter()">
+        ⭐ ${state.favoritesOnly ? 'عرض الكل' : 'عرض المفضلة فقط'} (${favCount})
+      </button>
+    </div>`;
+
+    if(!docs.length){
       const meta = SECTIONS.find(s=>s.id===section);
-      list.innerHTML = `<div class="empty-state"><b>لا يوجد محتوى بعد</b>${meta.empty}</div>`;
+      const msg = state.favoritesOnly ? 'لم تُضِف أي عنصر إلى المفضلة بعد بهذا القسم — اضغط ⭐ على أي عنصر لحفظه هنا.' : meta.empty;
+      list.innerHTML = filterBar + `<div class="empty-state"><b>لا يوجد محتوى</b>${msg}</div>`;
       return;
     }
-    let html='';
-    snap.forEach(doc=>{
+    const selfCheckSection = (section==='problems' || section==='exams');
+    let html = filterBar;
+    docs.forEach(doc=>{
       const d = doc.data();
-      html += `<div class="item-card">
-        <div class="item-title">${esc(d.title)}</div>
+      const favActive = favs[doc.id] ? 'active' : '';
+      const starBtn = `<button class="fav-star ${favActive}" id="fav-${doc.id}" onclick="toggleFavorite('${doc.id}')" title="إضافة للمفضلة">★</button>`;
+      const answerBlock = `
         <div class="item-body">${esc(d.content||'')}</div>
         ${d.formula? `<div class="item-formula">${esc(d.formula)}</div>` : ''}
-        ${d.videoUrl? `<div class="item-video"><iframe src="${esc(toEmbedUrl(d.videoUrl))}" allowfullscreen loading="lazy"></iframe></div>` : ''}
-        ${section==='homework' ? `<div class="hw-actions"><button class="btn btn-blue" onclick="openUploadModal('${gradeId}','${doc.id}',${JSON.stringify(d.title||'')})">📤 رفع الواجب</button></div>` : ''}
-      </div>`;
+        ${d.videoUrl? `<div class="item-video"><iframe src="${esc(toEmbedUrl(d.videoUrl))}" allowfullscreen loading="lazy"></iframe></div>` : ''}`;
+
+      if(selfCheckSection){
+        const titleJson = esc(JSON.stringify(d.title||''));
+        html += `<div class="item-card">
+          <div class="item-title-row">
+            <div class="item-title">${esc(d.title)}</div>
+            ${starBtn}
+          </div>
+          <div id="sc-reveal-${doc.id}">
+            <button class="btn btn-outline" onclick="revealAnswer('${doc.id}')">🔍 حاول تحلّه أولاً ثم اضغط لعرض الحل</button>
+          </div>
+          <div id="sc-answer-${doc.id}" style="display:none;">
+            ${answerBlock}
+            <div class="self-rate-row" id="sc-rate-${doc.id}">
+              <span>هل توصّلت للحل صح بنفسك؟</span>
+              <button class="btn btn-sm btn-outline" onclick='submitSelfCheck("${gradeId}","${section}","${doc.id}",${titleJson},true)'>✅ نعم</button>
+              <button class="btn btn-sm btn-outline" onclick='submitSelfCheck("${gradeId}","${section}","${doc.id}",${titleJson},false)'>❌ لا</button>
+            </div>
+          </div>
+        </div>`;
+      } else {
+        html += `<div class="item-card">
+          <div class="item-title-row">
+            <div class="item-title">${esc(d.title)}</div>
+            ${starBtn}
+          </div>
+          ${answerBlock}
+          ${section==='homework' ? `<div class="hw-actions"><button class="btn btn-blue" onclick="openUploadModal('${gradeId}','${doc.id}',${JSON.stringify(d.title||'')})">📤 رفع الواجب</button></div>` : ''}
+        </div>`;
+      }
     });
     list.innerHTML = html;
   })
@@ -703,6 +1869,42 @@ function loadItems(gradeId, section){
     const list = document.getElementById('itemList');
     if(list) list.innerHTML = `<div class="empty-state"><b>تعذّر تحميل البيانات</b>${esc(err.message)}</div>`;
   });
+}
+
+function revealAnswer(itemId){
+  const revealBtn = document.getElementById('sc-reveal-'+itemId);
+  const answer = document.getElementById('sc-answer-'+itemId);
+  if(revealBtn) revealBtn.style.display = 'none';
+  if(answer) answer.style.display = 'block';
+}
+
+function submitSelfCheck(gradeId, section, itemId, itemTitle, correct){
+  const rateRow = document.getElementById('sc-rate-'+itemId);
+  if(rateRow) rateRow.innerHTML = correct ? 'أحسنت! سجّلنا إجابتك ✓' : 'لا بأس، راجع الحل جيداً وحاول مرة أخرى لاحقاً ✓';
+
+  // Log for teacher analytics (which questions students struggle with most)
+  try{
+    db.collection(COL_SELF_CHECKS).add({
+      gradeId, section, itemId, itemTitle: (itemTitle||'').slice(0,300), correct: !!correct,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+  }catch(e){}
+
+  // Small point reward for genuinely engaging (attempting + checking), same
+  // reward whether right or wrong, so it never incentivizes dishonest self-rating.
+  const profile = loadLocalProfile();
+  if(!profile) return;
+  const ref = db.collection(COL_STUDENTS).doc(profile.studentId);
+  ref.get().then(snap=>{
+    if(!snap.exists) return;
+    const s = snap.data();
+    const done = new Set(s.selfCheckedIds||[]);
+    if(done.has(itemId)) return; // already rewarded for this specific question
+    return ref.update({
+      points: firebase.firestore.FieldValue.increment(2),
+      selfCheckedIds: firebase.firestore.FieldValue.arrayUnion(itemId)
+    });
+  }).then(()=>renderStudentBar()).catch(()=>{});
 }
 
 /* ================= COURSE BOOK (STUDENT VIEW) — CHAPTERS ================= */
@@ -736,14 +1938,17 @@ function loadBookTab(gradeId){
 function previewBookFile(id){
   const d = window._bookCache && window._bookCache[id];
   if(!d) return;
+  const src = d.fileURL || d.fileData;
+  if(!src) return;
+  if(d.fileURL){ window.open(d.fileURL, '_blank'); return; }
   const w = window.open('');
   if(d.fileType === 'application/pdf'){
-    w.document.write(`<title>${esc(d.fileName||'الكتاب')}</title><iframe src="${d.fileData}" style="width:100%;height:100vh;border:none;"></iframe>`);
+    w.document.write(`<title>${esc(d.fileName||'الكتاب')}</title><iframe src="${src}" style="width:100%;height:100vh;border:none;"></iframe>`);
   } else if(d.fileType && d.fileType.startsWith('image/')){
-    w.document.write(`<title>${esc(d.fileName||'الكتاب')}</title><body style="margin:0;background:#111"><img src="${d.fileData}" style="max-width:100%;display:block;margin:auto;"></body>`);
+    w.document.write(`<title>${esc(d.fileName||'الكتاب')}</title><body style="margin:0;background:#111"><img src="${src}" style="max-width:100%;display:block;margin:auto;"></body>`);
   } else {
     w.document.write(`<title>${esc(d.fileName||'الكتاب')}</title><body style="font-family:sans-serif;padding:30px;background:#111;color:#fff">
-    <a href="${d.fileData}" download="${esc(d.fileName||'file')}" style="color:#8FBFCB">اضغط هنا لتنزيل الملف</a></body>`);
+    <a href="${src}" download="${esc(d.fileName||'file')}" style="color:#8FBFCB">اضغط هنا لتنزيل الملف</a></body>`);
   }
 }
 
@@ -1999,23 +3204,28 @@ function initCapacitorActivity(card){
 
 function openUploadModal(gradeId, hwId, hwTitle){
   window._pendingHw = { gradeId, hwId, hwTitle };
+  const profile = loadLocalProfile();
   document.getElementById('modalRoot').innerHTML = `
   <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
     <div class="modal">
       <button class="modal-close" onclick="closeModal()">✕</button>
       <h3>رفع الواجب البيتي</h3>
       <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px;">الواجب: ${esc(hwTitle)}</p>
+      ${profile ? '' : `<div class="modal-msg" style="color:var(--blue); margin-bottom:10px;">💡 أنشئ ملفك الشخصي بعد الإرسال لتحصل على نقاط وشارات على واجباتك القادمة!</div>`}
       <div class="field">
         <label>اسم الطالب</label>
-        <input type="text" id="studentName" placeholder="أدخل اسمك الكامل">
+        <input type="text" id="studentName" placeholder="أدخل اسمك الكامل" value="${profile?esc(profile.name):''}">
       </div>
       <div class="field">
-        <label>الملف / الصورة</label>
+        <label>الملف / الصورة (حتى 25 ميجابايت)</label>
         <input type="file" id="studentFile" accept="image/*,.pdf,.doc,.docx">
       </div>
       <div class="modal-actions">
         <button class="btn btn-yellow" id="submitHwBtn" onclick="submitHomework()">إرسال الواجب</button>
         <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+      </div>
+      <div class="upload-progress" id="uploadProgressWrap" style="display:none;">
+        <div class="upload-progress-bar" id="uploadProgressBar"></div>
       </div>
       <div class="modal-msg" id="uploadMsg"></div>
     </div>
@@ -2032,31 +3242,46 @@ function submitHomework(){
   if(!name){ msg.className='modal-msg err'; msg.textContent='الرجاء إدخال اسم الطالب.'; return; }
   if(!fileInput.files.length){ msg.className='modal-msg err'; msg.textContent='الرجاء اختيار ملف أو صورة.'; return; }
   const file = fileInput.files[0];
-  if(file.size > 650*1024){ msg.className='modal-msg err'; msg.textContent='حجم الملف كبير جداً (الحد الأقصى تقريباً 650 كيلوبايت لأن قاعدة البيانات لا تقبل ملفات أكبر). جرّب ضغط الصورة أو تصويرها بجودة أقل.'; return; }
-  btn.disabled = true; btn.textContent='جارِ الإرسال...';
-  const reader = new FileReader();
-  reader.onload = function(){
-    db.collection(COL_SUBMISSIONS).add({
-      gradeId, homeworkId: hwId, homeworkTitle: hwTitle,
-      studentName: name,
-      fileData: reader.result,
-      fileType: file.type,
-      fileName: file.name,
-      submittedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
-      msg.className='modal-msg ok'; msg.textContent='تم إرسال الواجب بنجاح ✓';
-      setTimeout(closeModal, 1200);
-      toast('تم إرسال الواجب بنجاح', 'ok');
-    }).catch(err=>{
-      msg.className='modal-msg err'; msg.textContent='فشل الإرسال: ' + err.message;
-      btn.disabled=false; btn.textContent='إرسال الواجب';
-    });
-  };
-  reader.onerror = function(){
-    msg.className='modal-msg err'; msg.textContent='تعذّرت قراءة الملف.';
+  const MAX_SIZE = 25*1024*1024;
+  if(file.size > MAX_SIZE){ msg.className='modal-msg err'; msg.textContent='حجم الملف كبير جداً (الحد الأقصى 25 ميجابايت).'; return; }
+  btn.disabled = true; btn.textContent='جارِ الرفع...';
+  const progWrap = document.getElementById('uploadProgressWrap');
+  const progBar = document.getElementById('uploadProgressBar');
+  progWrap.style.display='block';
+
+  const path = 'submissions/' + gradeId + '/' + hwId + '/' + Date.now() + '_' + file.name;
+  const ref = storage.ref().child(path);
+  const task = ref.put(file);
+  task.on('state_changed', snap=>{
+    const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+    progBar.style.width = pct + '%';
+    btn.textContent = 'جارِ الرفع... ' + pct + '%';
+  }, err=>{
+    msg.className='modal-msg err'; msg.textContent='فشل الرفع: ' + err.message;
     btn.disabled=false; btn.textContent='إرسال الواجب';
-  };
-  reader.readAsDataURL(file);
+    progWrap.style.display='none';
+  }, ()=>{
+    task.snapshot.ref.getDownloadURL().then(url=>{
+      db.collection(COL_SUBMISSIONS).add({
+        gradeId, homeworkId: hwId, homeworkTitle: hwTitle,
+        studentName: name,
+        fileURL: url,
+        storagePath: path,
+        fileType: file.type,
+        fileName: file.name,
+        fileSize: file.size,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>{
+        msg.className='modal-msg ok'; msg.textContent='تم إرسال الواجب بنجاح ✓';
+        setTimeout(closeModal, 1200);
+        toast('تم إرسال الواجب بنجاح', 'ok');
+        awardHomeworkPoints(hwId);
+      }).catch(err=>{
+        msg.className='modal-msg err'; msg.textContent='فشل الحفظ: ' + err.message;
+        btn.disabled=false; btn.textContent='إرسال الواجب';
+      });
+    });
+  });
 }
 
 function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
@@ -2113,6 +3338,9 @@ function renderAdmin(root){
       <div class="admin-top">
         <div class="admin-title">لوحة إدارة المنصة</div>
         <div style="display:flex; gap:10px;">
+          <button class="btn btn-outline" onclick="exportGradeContent()">💾 تصدير نسخة احتياطية</button>
+          <button class="btn btn-outline" onclick="triggerImportFile()">📥 استيراد</button>
+          <input type="file" id="importFileInput" accept="application/json" style="display:none;" onchange="importGradeContent(this.files[0])">
           <button class="btn btn-outline" onclick="openChangePassModal()">🔑 تغيير كلمة المرور</button>
           <button class="btn btn-outline" onclick="openTelegramModal()">✈ رابط تلغرام</button>
           <button class="btn btn-outline" onclick="goHome()">↩ الرئيسية</button>
@@ -2123,6 +3351,7 @@ function renderAdmin(root){
         <button class="section-tab ${state.adminSection==='activities'?'active':''}" onclick="adminSwitchSection('activities')">🧪 الأنشطة التفاعلية</button>
         <button class="section-tab ${state.adminSection==='book'?'active':''}" onclick="adminSwitchSection('book')">📖 كتاب المادة</button>
         <button class="section-tab ${state.adminSection==='submissions'?'active':''}" onclick="adminSwitchSection('submissions')">📥 الواجبات المرسلة</button>
+        <button class="section-tab ${state.adminSection==='analytics'?'active':''}" onclick="adminSwitchSection('analytics')">📊 التحليلات</button>
       </div>
       <div class="add-row" id="addRow"></div>
       <div id="adminList"><div class="loading"><div class="spin"></div>جارِ التحميل...</div></div>
@@ -2137,12 +3366,16 @@ function adminSwitchSection(id){ state.adminSection=id; renderAdmin(document.get
 
 function renderAdminAddRow(){
   const row = document.getElementById('addRow');
-  if(state.adminSection==='submissions' || state.adminSection==='activities' || state.adminSection==='book'){ row.innerHTML=''; return; }
+  if(state.adminSection==='submissions' || state.adminSection==='activities' || state.adminSection==='book' || state.adminSection==='analytics'){ row.innerHTML=''; return; }
   const meta = SECTIONS.find(s=>s.id===state.adminSection);
   let html = `<button class="btn btn-yellow" onclick="openItemModal(null)">+ إضافة ${meta.singular}</button>`;
+  if(state.adminSection==='laws' || state.adminSection==='problems' || state.adminSection==='exams'){
+    html += ` <button class="btn btn-outline" onclick="openGenerateQuestionsModal()">🤖 توليد بالذكاء الاصطناعي</button>`;
+  }
   if(state.adminSection==='laws'){
     html += ` <button class="btn btn-outline" onclick="seedDefaultLaws()">✨ إضافة قوانين افتراضية لهذا الصف</button>`;
   }
+  html += ` <button class="btn btn-outline" onclick="openCopyModal(null)">📋 نسخ القسم لصف آخر</button>`;
   row.innerHTML = html;
 }
 
@@ -2162,6 +3395,7 @@ function seedDefaultLaws(){
 
 function loadAdminList(){
   const list = document.getElementById('adminList');
+  if(state.adminSection==='analytics'){ loadAnalyticsTab(); return; }
   if(state.adminSection==='book'){
     db.collection(COL_GRADES).doc(state.adminGrade).collection('book').get()
     .then(snap=>{
@@ -2175,7 +3409,7 @@ function loadAdminList(){
         html += `<div class="admin-item">
           <div class="info">
             <b>📖 ${label}</b>
-            <p>${d ? esc(d.fileName||'') + ' — ' + ((d.fileData||'').length/1024*0.75).toFixed(0) + ' KB تقريباً' : 'لم يُرفع ملف لهذا الفصل بعد'}</p>
+            <p>${d ? esc(d.fileName||'') + ' — ' + fmtSize(d) : 'لم يُرفع ملف لهذا الفصل بعد'}</p>
           </div>
           <div class="acts">
             ${d ? `<button class="icon-btn" onclick="previewBookFile('${chapNum}')">👁</button>` : ''}
@@ -2210,12 +3444,17 @@ function loadAdminList(){
     return;
   }
   if(state.adminSection==='submissions'){
-    db.collection(COL_SUBMISSIONS).where('gradeId','==',state.adminGrade).orderBy('submittedAt','desc').get()
+    // Sort by date only (single-field index, always available), then filter
+    // by grade client-side — avoids needing a manual composite index for
+    // where(gradeId) + orderBy(submittedAt) together.
+    db.collection(COL_SUBMISSIONS).orderBy('submittedAt','desc').limit(300).get()
     .then(snap=>{
-      if(snap.empty){ list.innerHTML = `<div class="empty-state"><b>لا توجد واجبات مرسلة</b>لم يقم أي طالب برفع واجب لهذا الصف بعد.</div>`; return; }
+      const docs = [];
+      snap.forEach(doc=>{ if(doc.data().gradeId===state.adminGrade) docs.push(doc); });
+      if(!docs.length){ list.innerHTML = `<div class="empty-state"><b>لا توجد واجبات مرسلة</b>لم يقم أي طالب برفع واجب لهذا الصف بعد.</div>`; return; }
       let html='';
       window._subsCache = {};
-      snap.forEach(doc=>{
+      docs.forEach(doc=>{
         const d = doc.data();
         window._subsCache[doc.id] = d;
         html += `<div class="admin-item sub-card">
@@ -2248,6 +3487,7 @@ function loadAdminList(){
           <p>${esc((d.content||'').slice(0,140))}${(d.content||'').length>140?'…':''}</p>
         </div>
         <div class="acts">
+          <button class="icon-btn" onclick="openCopyModal('${doc.id}')">📋</button>
           <button class="icon-btn" onclick="openItemModal('${doc.id}')">✎</button>
           <button class="icon-btn del" onclick="deleteItem('${doc.id}')">🗑</button>
         </div>
@@ -2272,6 +3512,7 @@ function toggleActivity(activityId, isOn){
 function previewFile(id){
   const d = window._subsCache && window._subsCache[id];
   if(!d) return;
+  if(d.fileURL){ window.open(d.fileURL, '_blank'); return; }
   const w = window.open('');
   if(d.fileType && d.fileType.startsWith('image/')){
     w.document.write(`<title>${esc(d.fileName||'ملف')}</title><body style="margin:0;background:#111"><img src="${d.fileData}" style="max-width:100%;display:block;margin:auto;"></body>`);
@@ -2284,7 +3525,12 @@ function previewFile(id){
 
 function deleteSubmission(id){
   if(!confirm('هل تريد حذف هذا الواجب المرسل؟')) return;
-  db.collection(COL_SUBMISSIONS).doc(id).delete().then(()=>{ toast('تم الحذف','ok'); loadAdminList(); })
+  const d = window._subsCache && window._subsCache[id];
+  db.collection(COL_SUBMISSIONS).doc(id).delete().then(()=>{
+    toast('تم الحذف','ok');
+    if(d && d.storagePath){ storage.ref().child(d.storagePath).delete().catch(()=>{}); }
+    loadAdminList();
+  })
   .catch(err=>toast('فشل الحذف: '+err.message,'err'));
 }
 
@@ -2293,6 +3539,181 @@ function deleteItem(id){
   db.collection(COL_GRADES).doc(state.adminGrade).collection(state.adminSection).doc(id).delete()
   .then(()=>{ toast('تم الحذف','ok'); loadAdminList(); })
   .catch(err=>toast('فشل الحذف: '+err.message,'err'));
+}
+
+/* ================= BACKUP: EXPORT / IMPORT GRADE CONTENT ================= */
+function exportGradeContent(){
+  const gradeId = state.adminGrade;
+  const g = gradeById(gradeId);
+  toast('جارِ تجهيز ملف التصدير...', '');
+
+  const sectionIds = SECTIONS.map(s=>s.id); // laws, problems, exams, homework
+  const sectionPromises = sectionIds.map(secId=>
+    db.collection(COL_GRADES).doc(gradeId).collection(secId).get()
+      .then(snap=>{ const arr=[]; snap.forEach(doc=>{ const d=doc.data(); arr.push({ title:d.title||'', content:d.content||'', formula:d.formula||'', videoUrl:d.videoUrl||'' }); }); return arr; })
+      .catch(()=>[])
+  );
+  const gradeDocPromise = db.collection(COL_GRADES).doc(gradeId).get()
+    .then(doc=>(doc.exists && doc.data().activities) || [])
+    .catch(()=>[]);
+
+  Promise.all([...sectionPromises, gradeDocPromise]).then(results=>{
+    const activities = results.pop();
+    const sections = {};
+    sectionIds.forEach((id,i)=>{ sections[id] = results[i]; });
+
+    const payload = {
+      exportedFrom: 'منصّة الفيزياء — الأستاذ علي محسن',
+      exportedAt: new Date().toISOString(),
+      gradeId: gradeId,
+      gradeName: g ? g.name : gradeId,
+      sections: sections,
+      activities: activities
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'physics-backup-' + gradeId + '-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('تم تنزيل النسخة الاحتياطية ✓', 'ok');
+  }).catch(err=>toast('فشل التصدير: '+err.message, 'err'));
+}
+
+function triggerImportFile(){
+  document.getElementById('importFileInput').click();
+}
+
+function importGradeContent(file){
+  if(!file) return;
+  const gradeId = state.adminGrade;
+  const reader = new FileReader();
+  reader.onload = function(){
+    let payload;
+    try{ payload = JSON.parse(reader.result); }
+    catch(e){ toast('ملف غير صالح (ليس JSON سليم)', 'err'); return; }
+    if(!payload.sections){ toast('صيغة الملف غير متعرّف عليها', 'err'); return; }
+    if(!confirm('سيتم استيراد محتوى الملف إلى صف "' + (gradeById(gradeId)||{}).name + '". العناصر بنفس العنوان تُتخطّى تلقائياً. متابعة؟')) return;
+
+    toast('جارِ الاستيراد...', '');
+    const sectionIds = Object.keys(payload.sections);
+    const jobs = sectionIds.map(secId=>{
+      const items = payload.sections[secId] || [];
+      if(!items.length) return Promise.resolve(0);
+      const targetCol = db.collection(COL_GRADES).doc(gradeId).collection(secId);
+      return targetCol.get().then(snap=>{
+        const existingTitles = new Set();
+        snap.forEach(doc=>existingTitles.add((doc.data().title||'').trim()));
+        const batch = db.batch();
+        let added = 0;
+        items.forEach(it=>{
+          if(existingTitles.has((it.title||'').trim())) return;
+          const ref = targetCol.doc();
+          batch.set(ref, {
+            title: it.title || '', content: it.content || '', formula: it.formula || '', videoUrl: it.videoUrl || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          added++;
+        });
+        return added ? batch.commit().then(()=>added) : 0;
+      });
+    });
+    Promise.all(jobs).then(results=>{
+      const total = results.reduce((a,b)=>a+b, 0);
+      toast('تم استيراد ' + total + ' عنصر بنجاح', 'ok');
+      loadAdminList();
+    }).catch(err=>toast('فشل الاستيراد: '+err.message, 'err'));
+  };
+  reader.onerror = function(){ toast('تعذّرت قراءة الملف', 'err'); };
+  reader.readAsText(file);
+  document.getElementById('importFileInput').value = '';
+}
+
+/* ================= COPY CONTENT BETWEEN GRADES ================= */
+function openCopyModal(itemId){
+  const meta = SECTIONS.find(s=>s.id===state.adminSection);
+  const single = !!itemId;
+  const item = single ? window._itemsCache[itemId] : null;
+  window._pendingCopy = { itemId, section: state.adminSection };
+  const otherGrades = GRADES.filter(g=>g.id !== state.adminGrade);
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3>📋 ${single ? 'نسخ "' + esc(item.title) + '"' : 'نسخ كل ' + meta.label + ' لهذا الصف'}</h3>
+      <p style="color:var(--muted); font-size:.85rem; margin-bottom:14px;">اختر الصفوف اللي تريد تنسخ لها:</p>
+      <div class="copy-grade-list">
+        ${otherGrades.map(g=>`
+          <label class="copy-grade-item">
+            <input type="checkbox" class="copyTargetGrade" value="${g.id}">
+            <span>${esc(g.name)}</span>
+          </label>`).join('')}
+      </div>
+      <label class="copy-grade-item" style="margin-top:10px; border-top:1px dashed var(--line); padding-top:12px;">
+        <input type="checkbox" id="copySkipDup" checked>
+        <span>تخطّي العناصر بنفس العنوان (تجنّب التكرار)</span>
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-yellow" id="copyRunBtn" onclick="runCopy()">نسخ الآن</button>
+        <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+      </div>
+      <div class="modal-msg" id="copyMsg"></div>
+    </div>
+  </div>`;
+}
+
+function runCopy(){
+  const { itemId, section } = window._pendingCopy;
+  const targets = Array.from(document.querySelectorAll('.copyTargetGrade:checked')).map(el=>el.value);
+  const skipDup = document.getElementById('copySkipDup').checked;
+  const msg = document.getElementById('copyMsg');
+  const btn = document.getElementById('copyRunBtn');
+  if(!targets.length){ msg.className='modal-msg err'; msg.textContent='اختر صف واحد على الأقل.'; return; }
+  btn.disabled = true; btn.textContent = 'جارِ النسخ...';
+
+  const sourceItemsPromise = itemId
+    ? Promise.resolve([window._itemsCache[itemId]])
+    : db.collection(COL_GRADES).doc(state.adminGrade).collection(section).get()
+        .then(snap=>{ const arr=[]; snap.forEach(doc=>arr.push(doc.data())); return arr; });
+
+  sourceItemsPromise.then(items=>{
+    if(!items.length){ throw new Error('لا يوجد محتوى لنسخه.'); }
+    const jobs = targets.map(gradeId=>{
+      const targetCol = db.collection(COL_GRADES).doc(gradeId).collection(section);
+      const existingTitlesPromise = skipDup
+        ? targetCol.get().then(snap=>{ const set=new Set(); snap.forEach(doc=>set.add((doc.data().title||'').trim())); return set; })
+        : Promise.resolve(new Set());
+      return existingTitlesPromise.then(existingTitles=>{
+        const batch = db.batch();
+        let added = 0;
+        items.forEach(it=>{
+          if(skipDup && existingTitles.has((it.title||'').trim())) return;
+          const ref = targetCol.doc();
+          batch.set(ref, {
+            title: it.title || '',
+            content: it.content || '',
+            formula: it.formula || '',
+            videoUrl: it.videoUrl || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          added++;
+        });
+        return added ? batch.commit().then(()=>added) : Promise.resolve(0);
+      });
+    });
+    return Promise.all(jobs);
+  }).then(results=>{
+    const total = results.reduce((a,b)=>a+b, 0);
+    toast('تم نسخ ' + total + ' عنصر إلى ' + targets.length + ' صف بنجاح', 'ok');
+    closeModal();
+  }).catch(err=>{
+    msg.className='modal-msg err'; msg.textContent = 'فشل النسخ: ' + err.message;
+    btn.disabled=false; btn.textContent='نسخ الآن';
+  });
 }
 
 function openItemModal(id){
@@ -2360,7 +3781,7 @@ function openBookUploadModal(chapNum){
       <button class="modal-close" onclick="closeModal()">✕</button>
       <h3>رفع ملف: ${esc(label)}</h3>
       <div class="modal-msg" style="color:var(--muted); margin-bottom:14px;">
-        ⚠ قاعدة البيانات تقبل ملفات صغيرة فقط (أقل من 650 كيلوبايت للملف الواحد). قسّم كل فصل إلى صور أو صفحات مضغوطة إذا لزم الأمر.
+        الحد الأقصى لحجم الملف الواحد 25 ميجابايت.
       </div>
       <div class="field">
         <label>الملف (PDF أو صورة)</label>
@@ -2369,6 +3790,9 @@ function openBookUploadModal(chapNum){
       <div class="modal-actions">
         <button class="btn btn-yellow" id="bookSubmitBtn" onclick="saveBookFile()">رفع الملف</button>
         <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+      </div>
+      <div class="upload-progress" id="uploadProgressWrap" style="display:none;">
+        <div class="upload-progress-bar" id="uploadProgressBar"></div>
       </div>
       <div class="modal-msg" id="bookMsg"></div>
     </div>
@@ -2383,41 +3807,65 @@ function saveBookFile(){
   msg.className='modal-msg'; msg.textContent='';
   if(!fileInput.files.length){ msg.className='modal-msg err'; msg.textContent='الرجاء اختيار ملف.'; return; }
   const file = fileInput.files[0];
-  const MAX_SIZE = 650*1024;
+  const MAX_SIZE = 25*1024*1024;
   if(file.size > MAX_SIZE){
     msg.className='modal-msg err';
-    msg.textContent = 'حجم الملف كبير جداً (' + (file.size/1024).toFixed(0) + ' كيلوبايت). الحد الأقصى تقريباً 650 كيلوبايت. جرّب ملفاً أصغر أو صورة مضغوطة.';
+    msg.textContent = 'حجم الملف كبير جداً (' + (file.size/1024/1024).toFixed(1) + ' ميجابايت). الحد الأقصى 25 ميجابايت.';
     return;
   }
   btn.disabled = true; btn.textContent = 'جارِ الرفع...';
-  const reader = new FileReader();
-  reader.onload = function(){
-    db.collection(COL_GRADES).doc(state.adminGrade).collection('book').doc(chapNum).set({
-      fileData: reader.result,
-      fileType: file.type,
-      fileName: file.name,
-      uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
-      toast('تم رفع الملف بنجاح','ok');
-      closeModal();
-      loadAdminList();
-    }).catch(err=>{
-      msg.className='modal-msg err';
-      msg.textContent = 'فشل الرفع: ' + err.message + ' (على الأغلب الملف بعد الترميز أكبر من حد قاعدة البيانات — جرّب ملفاً أصغر).';
-      btn.disabled=false; btn.textContent='رفع الملف';
-    });
-  };
-  reader.onerror = function(){
-    msg.className='modal-msg err'; msg.textContent='تعذّرت قراءة الملف.';
+  const progWrap = document.getElementById('uploadProgressWrap');
+  const progBar = document.getElementById('uploadProgressBar');
+  progWrap.style.display='block';
+
+  const path = 'books/' + state.adminGrade + '/' + chapNum + '_' + Date.now() + '_' + file.name;
+  const ref = storage.ref().child(path);
+  const task = ref.put(file);
+  task.on('state_changed', snap=>{
+    const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+    progBar.style.width = pct + '%';
+    btn.textContent = 'جارِ الرفع... ' + pct + '%';
+  }, err=>{
+    msg.className='modal-msg err';
+    msg.textContent = 'فشل الرفع: ' + err.message;
     btn.disabled=false; btn.textContent='رفع الملف';
-  };
-  reader.readAsDataURL(file);
+    progWrap.style.display='none';
+  }, ()=>{
+    task.snapshot.ref.getDownloadURL().then(url=>{
+      const oldData = window._bookCache && window._bookCache[chapNum];
+      const oldPath = oldData && oldData.storagePath;
+      db.collection(COL_GRADES).doc(state.adminGrade).collection('book').doc(chapNum).set({
+        fileURL: url,
+        storagePath: path,
+        fileType: file.type,
+        fileName: file.name,
+        fileSize: file.size,
+        uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>{
+        toast('تم رفع الملف بنجاح','ok');
+        closeModal();
+        loadAdminList();
+        if(oldPath && oldPath !== path){
+          storage.ref().child(oldPath).delete().catch(()=>{});
+        }
+      }).catch(err=>{
+        msg.className='modal-msg err';
+        msg.textContent = 'فشل الحفظ: ' + err.message;
+        btn.disabled=false; btn.textContent='رفع الملف';
+      });
+    });
+  });
 }
 
 function deleteBookFile(chapNum){
   if(!confirm('هل تريد حذف ملف هذا الفصل؟')) return;
+  const d = window._bookCache && window._bookCache[chapNum];
   db.collection(COL_GRADES).doc(state.adminGrade).collection('book').doc(chapNum).delete()
-  .then(()=>{ toast('تم الحذف','ok'); loadAdminList(); })
+  .then(()=>{
+    toast('تم الحذف','ok');
+    if(d && d.storagePath){ storage.ref().child(d.storagePath).delete().catch(()=>{}); }
+    loadAdminList();
+  })
   .catch(err=>toast('فشل الحذف: '+err.message,'err'));
 }
 
