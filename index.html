@@ -24,6 +24,11 @@
   // with the compat SDK app used for Firestore/Storage above.
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
   import { getAI, getGenerativeModel, GoogleAIBackend } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-ai.js';
+  import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js';
+
+  // ⚠️ استبدل هذا بمفتاح reCAPTCHA v3 (site key) اللي تحصل عليه من
+  // Firebase Console → Build → App Check → تسجيل تطبيق الويب
+  const RECAPTCHA_V3_SITE_KEY = '6Ld-_F8tAAAAACPV1yBQgbFEjVRkd8jm78zb37xG';
 
   const aiFirebaseConfig = {
     apiKey: "AIzaSyBsXLpC1x3nw8UPA2QWVBKhhAnRKjV0RPc",
@@ -43,10 +48,24 @@
 5. إذا سأل الطالب عن شيء خارج مادة الفيزياء تماماً، اعتذر بلطف ووجّهه للتركيز على المادة.
 6. خلّي ردودك مختصرة ومركزة (فقرات قصيرة)، لا تكتب مقالاً طويلاً.`;
 
+  // ينشئ App Check مرة وحدة لكل تطبيق Firebase (initializeAppCheck يرمي خطأ
+  // إذا انصدت عليه أكثر من مرة لنفس الـ app).
+  function activateAppCheck(app){
+    try{
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+        isTokenAutoRefreshEnabled: true
+      });
+    }catch(e){
+      console.warn('App Check init failed:', e.message);
+    }
+  }
+
   let _chatModel = null;
   function getChatModel(){
     if(_chatModel) return _chatModel;
     const aiApp = initializeApp(aiFirebaseConfig, 'aiLogicApp');
+    activateAppCheck(aiApp);
     const ai = getAI(aiApp, { backend: new GoogleAIBackend() });
     _chatModel = getGenerativeModel(ai, {
       model: 'gemini-2.5-flash-lite',
@@ -59,10 +78,12 @@
   function getGenModel(){
     if(_genModel) return _genModel;
     const aiApp = initializeApp(aiFirebaseConfig, 'aiLogicApp2');
+    activateAppCheck(aiApp);
     const ai = getAI(aiApp, { backend: new GoogleAIBackend() });
     _genModel = getGenerativeModel(ai, { model: 'gemini-2.5-flash-lite' });
     return _genModel;
   }
+
 
   // Ask the tutor a question, with optional prior turns for context.
   // history: array of {role:'user'|'model', text}
@@ -143,7 +164,7 @@ body[data-theme="light"]{
 body[data-theme="light"] .hero-bg{ opacity:.08; }
 body[data-theme="light"] ::selection{ background:var(--yellow); color:#fff; }
 *{box-sizing:border-box; margin:0; padding:0;}
-html,body{height:100%;}
+html,body{height:100%; overflow-x:hidden; max-width:100%;}
 body{
   background:var(--bg);
   color:var(--chalk);
@@ -151,6 +172,8 @@ body{
   min-height:100vh;
   position:relative;
   overflow-x:hidden;
+  max-width:100vw;
+  overflow-wrap:break-word;
   transition:background-color .3s ease, color .3s ease;
   background-image:
     radial-gradient(circle at 15% 8%, rgba(255,255,255,0.025) 0, transparent 3%),
@@ -494,7 +517,8 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
 }
 .modal{
   background:var(--surface); border:2px dashed var(--line-strong); border-radius:12px; padding:30px;
-  width:100%; max-width:480px; max-height:88vh; overflow-y:auto; position:relative;
+  width:100%; max-width:480px; max-height:88vh; overflow-y:auto; overflow-x:hidden; position:relative;
+  overflow-wrap:break-word; word-break:break-word;
 }
 .modal h3{font-family:'Aref Ruqaa',serif; font-size:1.6rem; color:var(--yellow); margin-bottom:20px;}
 .field{margin-bottom:16px;}
@@ -507,7 +531,7 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
 .field input:focus, .field textarea:focus, .field select:focus{outline:2px solid var(--yellow); outline-offset:1px;}
 .field input[type=file]{color:var(--muted); font-size:.85rem;}
 .modal-actions{display:flex; gap:10px; justify-content:flex-start; margin-top:22px;}
-.modal-msg{font-size:.85rem; margin-top:10px; min-height:18px;}
+.modal-msg{font-size:.85rem; margin-top:10px; min-height:18px; overflow-wrap:break-word; word-break:break-word;}
 .modal-msg.err{color:var(--danger);}
 .modal-msg.ok{color:var(--success);}
 .upload-progress{
