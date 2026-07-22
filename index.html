@@ -68,7 +68,7 @@
     activateAppCheck(aiApp);
     const ai = getAI(aiApp, { backend: new GoogleAIBackend() });
     _chatModel = getGenerativeModel(ai, {
-      model: 'gemini-2.5-flash-lite',
+      model: 'gemini-3.1-flash-lite',
       systemInstruction: TUTOR_SYSTEM_INSTRUCTION
     });
     return _chatModel;
@@ -80,7 +80,7 @@
     const aiApp = initializeApp(aiFirebaseConfig, 'aiLogicApp2');
     activateAppCheck(aiApp);
     const ai = getAI(aiApp, { backend: new GoogleAIBackend() });
-    _genModel = getGenerativeModel(ai, { model: 'gemini-2.5-flash-lite' });
+    _genModel = getGenerativeModel(ai, { model: 'gemini-3.1-flash-lite' });
     return _genModel;
   }
 
@@ -605,7 +605,7 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
 .admin-main{flex:1; min-width:0;}
 .admin-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;}
 .admin-title{font-family:'Aref Ruqaa',serif; font-size:1.9rem; color:var(--yellow);}
-.section-tabs{display:flex; gap:6px; margin-bottom:22px; background:var(--surface); padding:6px; border-radius:8px; width:fit-content; flex-wrap:wrap; border:1px solid var(--line);}
+.section-tabs{display:flex; gap:6px; margin-bottom:22px; background:var(--surface); padding:6px; border-radius:8px; max-width:100%; flex-wrap:wrap; border:1px solid var(--line);}
 .section-tab{
   padding:9px 16px; border-radius:6px; border:none; background:none; color:var(--muted); cursor:pointer;
   font-family:'IBM Plex Sans Arabic'; font-weight:600; font-size:.86rem; display:flex; align-items:center; gap:6px;
