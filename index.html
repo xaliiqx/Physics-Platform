@@ -602,13 +602,14 @@ footer{text-align:center; padding:26px; color:var(--muted); font-size:.8rem; bor
 }
 .side-grade.active{background:var(--card); color:var(--yellow);}
 .side-grade:hover{color:var(--chalk);}
-.admin-main{flex:1; min-width:0;}
+.admin-main{flex:1; min-width:0; max-width:100%;}
 .admin-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;}
 .admin-title{font-family:'Aref Ruqaa',serif; font-size:1.9rem; color:var(--yellow);}
-.section-tabs{display:flex; gap:6px; margin-bottom:22px; background:var(--surface); padding:6px; border-radius:8px; max-width:100%; flex-wrap:wrap; border:1px solid var(--line);}
+.section-tabs{display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:6px; margin-bottom:22px; background:var(--surface); padding:6px; border-radius:8px; width:100%; max-width:100%; box-sizing:border-box; border:1px solid var(--line);}
 .section-tab{
-  padding:9px 16px; border-radius:6px; border:none; background:none; color:var(--muted); cursor:pointer;
-  font-family:'IBM Plex Sans Arabic'; font-weight:600; font-size:.86rem; display:flex; align-items:center; gap:6px;
+  padding:9px 12px; border-radius:6px; border:none; background:none; color:var(--muted); cursor:pointer;
+  font-family:'IBM Plex Sans Arabic'; font-weight:600; font-size:.86rem; display:flex; align-items:center;
+  justify-content:center; gap:6px; min-width:0; text-align:center; white-space:normal; word-break:break-word;
 }
 .section-tab.active{background:var(--yellow); color:#20301c;}
 .add-row{margin-bottom:18px;}
@@ -3361,7 +3362,7 @@ function renderAdmin(root){
     <div class="admin-main">
       <div class="admin-top">
         <div class="admin-title">لوحة إدارة المنصة</div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; max-width:100%;">
           <button class="btn btn-outline" onclick="exportGradeContent()">💾 تصدير نسخة احتياطية</button>
           <button class="btn btn-outline" onclick="triggerImportFile()">📥 استيراد</button>
           <input type="file" id="importFileInput" accept="application/json" style="display:none;" onchange="importGradeContent(this.files[0])">
